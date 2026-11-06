@@ -1,5 +1,6 @@
 import { PrismaClient } from "../generated/prisma";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { hashPassword } from "better-auth/crypto";
 
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
@@ -9,6 +10,7 @@ const prisma = new PrismaClient({ adapter: new PrismaPg(connectionString) });
 
 const ORG_NAME = "Community Family Support Programme";
 const COORDINATOR_EMAIL = "alex.morgan@example.com";
+const COORDINATOR_PASSWORD = "DemoPass123!";
 const BENEFICIARY_DISPLAY = "Maria Santos";
 const SUPPORT_NOTE =
   "Please allocate $300 for rent, $150 for school fees and $50 for food.";
@@ -22,17 +24,44 @@ async function main(): Promise<void> {
   });
 
   const coordinator = await prisma.user.upsert({
-    where: { id: "seed-user-alex-morgan" },
-    update: { name: "Alex Morgan", email: COORDINATOR_EMAIL, role: "COORDINATOR" },
+    where: { email: COORDINATOR_EMAIL },
+    update: {
+      name: "Alex Morgan",
+      organizationId: organization.id,
+      role: "COORDINATOR",
+      emailVerified: true,
+    },
     create: {
       id: "seed-user-alex-morgan",
       organizationId: organization.id,
       name: "Alex Morgan",
       email: COORDINATOR_EMAIL,
-      passwordHash: "placeholder-seed-password-hash",
+      emailVerified: true,
       role: "COORDINATOR",
     },
   });
+
+  // Better Auth credential account so the coordinator can sign in.
+  const hashed = await hashPassword(COORDINATOR_PASSWORD);
+  const existingAccount = await prisma.account.findFirst({
+    where: { userId: coordinator.id, providerId: "credential" },
+  });
+  if (existingAccount) {
+    await prisma.account.update({
+      where: { id: existingAccount.id },
+      data: { password: hashed, accountId: coordinator.id },
+    });
+  } else {
+    await prisma.account.create({
+      data: {
+        id: "seed-account-alex-morgan",
+        userId: coordinator.id,
+        providerId: "credential",
+        accountId: coordinator.id,
+        password: hashed,
+      },
+    });
+  }
 
   const beneficiary = await prisma.beneficiary.upsert({
     where: { id: "seed-beneficiary-maria-santos" },
@@ -71,6 +100,7 @@ async function main(): Promise<void> {
   });
 
   console.warn("Seed complete: Community Family Support Programme -> Maria Santos USD 500.00");
+  console.warn(`Coordinator login: ${COORDINATOR_EMAIL} / ${COORDINATOR_PASSWORD}`);
 }
 
 main()
