@@ -7,6 +7,119 @@ datasource db {
   provider = "postgresql"
 }
 
-model Placeholder {
-  id String @id @default(cuid())
+// Slice 1.3 — Schema v1 (spec §9, ADR-0002). Only the four models listed
+// for this slice; later-slice models are intentionally NOT added yet.
+
+enum Role {
+  ADMIN
+  COORDINATOR
+}
+
+enum PreferredLanguage {
+  en
+  ta
+  hi
+}
+
+enum PlanStatus {
+  DRAFT
+  INVITED
+  BENEFICIARY_ACCEPTED
+  REVISION_PROPOSED
+  COORDINATOR_ACKNOWLEDGED
+  BENEFICIARY_DECLINED_TO_SHARE
+  NO_RESPONSE
+  CLOSED
+}
+
+enum PaymentStatus {
+  NOT_SENT
+  READY
+  SUBMITTING
+  STATUS_UNKNOWN
+  PENDING
+  PROCESSING
+  SUCCESS
+  DENIED
+  FAILED
+  UNCLAIMED
+  RETURNED
+  ON_HOLD
+  BLOCKED
+  REFUNDED
+  REVERSED
+}
+
+enum PaymentMode {
+  SANDBOX
+  MOCK
+}
+
+model Organization {
+  id            String         @id @default(cuid())
+  name          String
+  users         User[]
+  beneficiaries Beneficiary[]
+  disbursements Disbursement[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model User {
+  id                 String         @id @default(cuid())
+  organizationId     String
+  organization       Organization   @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  name               String
+  email              String
+  passwordHash       String
+  role               Role
+  coordinatedDisbursements Disbursement[] @relation("DisbursementCoordinator")
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  @@index([organizationId])
+}
+
+model Beneficiary {
+  id                        String            @id @default(cuid())
+  organizationId            String
+  organization              Organization      @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  displayName               String
+  invitationEmail           String
+  encryptedPayPalRecipient  String
+  preferredLanguage         PreferredLanguage
+  disbursements             Disbursement[]
+  createdAt                 DateTime          @default(now())
+  updatedAt                 DateTime          @updatedAt
+
+  @@index([organizationId])
+}
+
+model Disbursement {
+  id                                String       @id @default(cuid())
+  publicReference                   String       @unique
+  organizationId                    String
+  organization                      Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  coordinatorId                     String
+  coordinator                       User         @relation("DisbursementCoordinator", fields: [coordinatorId], references: [id], onDelete: Restrict)
+  beneficiaryId                     String
+  beneficiary                       Beneficiary  @relation(fields: [beneficiaryId], references: [id], onDelete: Restrict)
+  amountMinor                       BigInt
+  currency                          String       @default("USD")
+  supportNote                       String       @db.Text
+  shareSupportNoteWithBeneficiary   Boolean      @default(false)
+  planStatus                        PlanStatus   @default(DRAFT)
+  paymentStatus                     PaymentStatus @default(NOT_SENT)
+  paypalPayoutBatchId               String?
+  paypalPayoutItemId                String?
+  paypalBatchStatus                 String?
+  paypalItemStatus                  String?
+  paymentMode                       PaymentMode @default(SANDBOX)
+  createdAt                         DateTime     @default(now())
+  updatedAt                         DateTime     @updatedAt
+
+  @@index([organizationId])
+  @@index([organizationId, createdAt])
+  @@index([organizationId, paymentStatus])
+  @@index([organizationId, planStatus])
 }
