@@ -20,6 +20,7 @@ Index of Architecture Decision Records. Each ADR is self-contained and traces to
 | ADR-0014 | Testing strategy (TDD) | Accepted | Part E §17 |
 | ADR-0015 | Env-only secrets | Accepted | Part C §13, §24 |
 | ADR-0016 | Ports-and-Adapters for all third parties | Accepted | Part C §7 |
+| ADR-0017 | Clean Architecture: Entities, Use Cases, Ports, Adapters, Frameworks | Accepted | Part C §7–§8 |
 
 ## How to add a new ADR
 

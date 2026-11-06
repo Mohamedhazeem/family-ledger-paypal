@@ -17,10 +17,10 @@
 | Logging | pino (redaction) | 10.4.0 | Redact authorization, cookie, paypal*secret*, *_token, receiver, free-text notes | Part C §13 |
 | Forms | react-hook-form + @hookform/resolvers + sonner | 7.91.0 / 7.0.3 / 2.0.8 | No hand-rolled state; toasts for feedback | Part C §7 |
 | UI styling | Tailwind CSS v4 + shadcn/ui + Lucide | 4.3.4 / 1.70.0 | CSS-first, no tailwind.config.* | Part C §7 |
-| Analytics | AG Studio 3 (default harness + server-side LLM proxy) + AG Grid React fallback | ag-grid-react 36.3.0 | Sponsor primary; aggregate-only views | Part D §14G, ADR-0010 |
+| Analytics | AG Studio 3 (default harness + server-side LLM proxy) + AG Grid React fallback | ag-studio 3.1.0, ag-studio-react 3.1.0, ag-grid-react 36.3.0 | Sponsor primary; aggregate-only views | Part D §14G, ADR-0010 |
 | PayPal | PayPal Payouts REST API v1, sandbox only, via thin server-only adapter | api sandbox | Full payout must be real; persist sender_batch_id before call; SDK types never leak past adapter | Part C §11, ADR-0006, ADR-0012 |
 | APIMatic | PayPal Context Plugin before adapter | npx context-plugins install paypal | Request fields from live contract, not memory | Part D §15 |
-| Unit tests | Vitest + @testing-library/react + jsdom + vite-tsconfig-paths | 5.1.0 / 16.3.3 / 31.0.0 / 6.1.1 | TDD; logic in src/services (Server Components not Vitest-testable) | Part E §17, ADR-0014 |
+| Unit tests | Vitest + @testing-library/react + jsdom + vite-tsconfig-paths | 5.1.0 / 16.3.3 / 31.0.0 / 6.1.1 | TDD; logic in src/application (use-cases) (Server Components not Vitest-testable) | Part E §17, ADR-0014 |
 | Network mocks | MSW | 3.0.4 | Mock AI + PayPal in unit/integration tests | Part E §17 |
 | E2E | Playwright | 1.65.0 | Full 11-step demo flow | Part E §17–§18 |
 | File-size | ESLint max-lines 300 + lint-staged + husky | lint-staged 17.6.0, husky 9.1.7 | Makes ADR-0013 real; pre-commit gate | ADR-0013 |
@@ -39,14 +39,19 @@ All versions exact in package.json (no ^/~) + package-lock.json committed.
 
 ```
 src/
-  app/                 # Route Handlers thin, pages; proxy.ts for middleware
-  components/          # UI components, shadcn ui/
-  lib/                 # auth, db, validation, money, security, audit (no SDK imports)
-  services/
-    ai/                # AiProvider port (provider.ts), adapters, schemas.ts
-    paypal/            # PayPal port + Sandbox/Mock adapters — only file importing PayPal SDK
-    analytics/         # AnalyticsPort (aggregate-only) + AG Studio adapter
-    disbursements/ invitations/ # business rules
+  domain/              # Entities + value-objects (pure, no framework/SDK): entities/, value-objects/
+  application/
+    use-cases/         # one Use Case per vertical slice (CreateDisbursement, SendPayout, ...)
+    ports/             # AiProvider, PayoutsPort, DisbursementRepository, AnalyticsPort, AuthPort, EmailPort, Clock
+  infrastructure/
+    ai/                # AiProvider port impls (OpenAiAdapter), schemas.ts — only AI SDK importer
+    paypal/            # PayoutsPort impl (PayPalSandboxAdapter) — only PayPal SDK importer
+    db/                # Prisma repositories (DisbursementRepository impl)
+    analytics/         # AnalyticsPort impls (AgStudioAdapter, AgGridFallbackAdapter)
+    auth/ email/       # AuthPort, EmailPort impls
+  app/                 # Frameworks: Route Handlers thin, pages; proxy.ts for middleware
+  components/          # UI components, shadcn ui/ (frameworks)
+  lib/                 # validation, money, security, audit (no vendor SDKs in domain)
   env.ts               # @t3-oss/env-nextjs schema, imported by instrumentation.ts
 prisma/
   schema.prisma        # generated client -> ../generated/prisma (committed output path)
@@ -56,7 +61,7 @@ tests/e2e/             # Playwright
 generated/             # Prisma client output (not committed; path is committed)
 ```
 
-Dependency direction: UI → Route Handlers → services/ports → adapters → external. Business rules never import vendor SDKs.
+Dependency direction (ADR-0017): Entities ← Use Cases ← Ports ← Adapters ← Frameworks. Business rules never import vendor SDKs.
 
 ## Dependency policy
 
@@ -94,10 +99,10 @@ Hooks: `npx husky init` + lint-staged runs ESLint + Prettier check on staged *.t
 5. Auth — Better Auth primary (Prisma adapter, email/password) with HttpOnly SameSite cookies, server-side session checks on every operator route, seeded judge account; Auth.js v5 fallback only if Better Auth cannot meet session/role requirements.
 6. Zod 4 — `safeParse` everywhere, `z.record` with explicit key type, unified error API (`z.treeifyError`); schemas for requests, AI output, PayPal responses, env vars.
 7. Env boot — @t3-oss/env-nextjs in `src/env.ts`, imported by `instrumentation.ts`, fails fast with readable error; services never read `process.env` directly.
-8. Logging — pino with redact list: authorization, cookie, paypal*secret*, *_token, receiver, free-text notes; `no-console` rule enforced in `src/services/**`.
+8. Logging — pino with redact list: authorization, cookie, paypal*secret*, *_token, receiver, free-text notes; `no-console` rule enforced in `src/application/**` and `src/infrastructure/**`.
 9. Forms — react-hook-form + @hookform/resolvers/zod + sonner toasts; no hand-rolled form state.
 10. UI — Tailwind v4 CSS-first (`@import "tailwindcss"`, no tailwind.config.*), shadcn/ui, Lucide; shadcn CLI compatibility with Next 16.4.5 to be verified before generating components.
-11. Testing — Vitest 5 + RTL + jsdom + vite-tsconfig-paths; Playwright for E2E; MSW for AI/PayPal mocking; async Server Components not unit-tested with Vitest — push logic into `src/services/**`, cover rendered flow with Playwright.
+11. Testing — Vitest 5 + RTL + jsdom + vite-tsconfig-paths; Playwright for E2E; MSW for AI/PayPal mocking; async Server Components not unit-tested with Vitest — push logic into `src/application/**` (use-cases) + `src/domain/**`, cover rendered flow with Playwright.
 12. File-size — ESLint `max-lines: 300` (skip blank lines and comments) in `eslint.config.mjs`, plus husky + lint-staged pre-commit gate; ADR-0013 enforced in CI.
 13. PayPal adapter — Thin server-only module wrapping `POST /v1/payments/payouts` + `GET /v1/payments/payouts/{id}`; persist `sender_batch_id` BEFORE call, reuse on 5xx/timeout, never regenerate on uncertainty; SDK types never leak; confirm sandbox Payouts capability enabled before Day 1 ends.
 14. APIMatic first — Run `npx context-plugins install paypal` BEFORE writing PayPal adapter; use generated context for request fields; record actual usage in README.
@@ -113,16 +118,16 @@ Hooks: `npx husky init` + lint-staged runs ESLint + Prettier check on staged *.t
 - TypeScript 7.0: `typescript-eslint` does not support TS 7 — pinned to 5.9.3 for lint compatibility (not 7.0.2). When TS ≥7.1 ships, re-evaluate.
 - Zod 4: `z.record` requires explicit key type; error API is unified (`z.treeifyError`); `safeParse` preferred.
 - Tailwind v4: CSS-first config (`@import "tailwindcss"`), no `tailwind.config.*`; shadcn CLI must be verified with Next 16.4.5.
-- Vitest 5: async Server Components cannot be unit-tested — logic in `src/services/**`, flows via Playwright.
+- Vitest 5: async Server Components cannot be unit-tested — logic in `src/application/**` + `src/domain/**`, flows via Playwright.
 
 ## Swap matrix
 
 | To replace | Change file | Env var |
 |---|---|---|
-| AI provider | `src/services/ai/provider.ts` + new `src/services/ai/<adapter>.ts` | `AI_PROVIDER`, `AI_API_KEY`, `AI_MODEL` |
-| PayPal sandbox→live/other | `src/services/paypal/client.ts` (only SDK-importing file) + factory | `PAYPAL_ENV`, `PAYPAL_CLIENT_ID/SECRET/WEBHOOK_ID` |
-| AG Studio → AG Grid fallback | `src/services/analytics/` adapter (aggregate DTOs unchanged) | `AG_STUDIO_LICENSE_KEY` |
-| Better Auth → Auth.js v5 | `src/lib/auth/` (`AuthPort`) | `AUTH_SECRET` (+ new provider vars) |
-| Postgres host | `prisma.config.ts` `datasource.url` + Prisma adapter | `DATABASE_URL` |
-| Email (post-MVP) | `src/services/email/` (NoopEmailAdapter → ResendAdapter) | `EMAIL_PROVIDER` (optional) |
+| AI provider | `src/application/ports/ai.ts` + new `src/infrastructure/ai/<adapter>.ts` | `AI_PROVIDER`, `AI_API_KEY`, `AI_MODEL` |
+| PayPal sandbox→live/other | `src/infrastructure/paypal/client.ts` (only SDK-importing file) + factory, port lives in `src/application/ports/paypal.ts` | `PAYPAL_ENV`, `PAYPAL_CLIENT_ID/SECRET/WEBHOOK_ID` |
+| AG Studio → AG Grid fallback | `src/infrastructure/analytics/` adapter (aggregate DTOs unchanged) | `AG_STUDIO_LICENSE_KEY` |
+| Better Auth → Auth.js v5 | `src/application/ports/auth.ts` (`AuthPort`) impl in `src/infrastructure/auth/` | `AUTH_SECRET` (+ new provider vars) |
+| Postgres host | `prisma.config.ts` `datasource.url` + Prisma adapter (`src/infrastructure/db/`) | `DATABASE_URL` |
+| Email (post-MVP) | `src/infrastructure/email/` (NoopEmailAdapter → ResendAdapter) | `EMAIL_PROVIDER` (optional) |
 

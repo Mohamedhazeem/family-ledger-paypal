@@ -30,6 +30,8 @@
     "@testing-library/jest-dom": "6.9.1",
     "ag-grid-community": "36.3.0",
     "ag-grid-react": "36.3.0",
+    "ag-studio": "3.1.0",
+    "ag-studio-react": "3.1.0",
     "better-auth": "1.7.18",
     "decimal.js": "10.6.0",
     "lucide-react": "1.70.0",

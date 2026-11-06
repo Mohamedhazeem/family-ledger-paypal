@@ -26,28 +26,36 @@
 11. Use synthetic data only in the hackathon demo. — Seed/demo data must be fictional; no real family/money data.
 12. Do not claim that the prototype is a live remittance service or production-ready financial product. — Sandbox-only, no live-money claims.
 
-## 3. Architecture overview
+## 3. Architecture overview — Clean Architecture
 
-- Stack: Next.js App Router + TypeScript (frontend + Route Handlers), Tailwind + shadcn/ui + Lucide, PostgreSQL + Prisma, Zod, Vitest + Playwright, Render. (Parts C §7–§8, ADR-0001, ADR-0002, ADR-0011)
-- Rule: Route Handlers are thin — parse/auth/validate (Zod), delegate to `src/services/*`, return typed response. No business rules in handlers.
+- Stack: Next.js App Router + TypeScript (frontend + Route Handlers), Tailwind + shadcn/ui + Lucide, PostgreSQL + Prisma, Zod, Vitest + Playwright, Render. (Parts C §7–§8, ADR-0001, ADR-0002, ADR-0011, ADR-0017)
+- Clean Architecture (ADR-0017) — four rings, inward dependency rule:
+  - **Entities** (`src/domain/entities/`, `src/domain/value-objects/`): pure TypeScript, no framework/SDK imports. Hosts `PlanStatus`/`PaymentStatus` state machines, `Money` (BigInt minor units), consent/payment independence, invariants. No Next.js/Prisma/PayPal imports.
+  - **Use Cases** (`src/application/use-cases/`): one class/function per vertical slice (`CreateDisbursement`, `ParseSupportIntent`, `AcceptInvitation`, `SendPayout`, `GetPayoutStatus`). Orchestrate Entities + Ports. No Next.js/Prisma/PayPal imports.
+  - **Ports** (`src/application/ports/`): `AiProvider`, `PayoutsPort`, `DisbursementRepository`, `AnalyticsPort`, `AuthPort`, `EmailPort`, `Clock`. Defined in application; implemented in adapters.
+  - **Adapters** (`src/infrastructure/ai|paypal|db|analytics|auth|email/`): Zod validation, SDK/Prisma calls, DTO mapping. Only place vendor packages are imported (`import 'server-only'`).
+  - **Frameworks & Drivers** (`src/app/`, `src/components/`, `src/lib/`, `proxy.ts`): thin Route Handlers (validate→Use Case→presenter), Tailwind/shadcn/Lucide, Server Actions. No business logic.
+- Rule: Route Handlers are thin — parse/auth/validate (Zod), delegate to a Use Case, return typed response. No business rules in handlers.
 - Module map:
-  - `src/app/(auth)/`, `/dashboard`, `/disbursements`, `/analytics`, `/beneficiary/[token]`, `api/*` — UI + routes
+  - `src/app/(auth)/`, `/dashboard`, `/disbursements`, `/analytics`, `/beneficiary/[token]`, `api/*` — frameworks (UI + routes)
   - `src/components/{dashboard,disbursements,beneficiary,analytics,ui}/`
-  - `src/lib/{auth,db,validation,money,security,audit}/`
-  - `src/services/{ai,paypal,disbursements,invitations}/` — single-responsibility business logic, testable without Next.js request objects
-- Dependency direction: UI → Route Handlers → services/ports → adapters → external. Never the reverse. Services never import adapter SDKs (e.g. PayPal/ OpenAI clients) — only port types. Mappers belong in adapters, not business rules.
-- Scalable/efficient: vertical slices, clear seams, no microservices, no premature abstraction beyond defined ports. Smallest change that satisfies spec.
+  - `src/domain/entities/` `src/domain/value-objects/` — Entities (pure)
+  - `src/application/use-cases/`, `src/application/ports/` — Use Cases + Ports
+  - `src/infrastructure/ai|paypal|db|analytics|auth|email/` — Adapters (provider SDKs, Prisma, Zod mapping)
+  - `src/lib/{validation,money,security,audit}/` — shared libs (no vendor SDKs in domain)
+- Dependency direction: Entities ← Use Cases ← Adapters ← Frameworks. Never the reverse. `domain` imports nothing internal; `application` imports only `domain` + ports. Use Cases never import adapter SDKs (e.g. PayPal/OpenAI clients) — only port types. Mappers belong in adapters, not use cases.
+- Scalable/efficient: vertical slices (one Use Case per slice), clear seams, no microservices, no premature abstraction beyond defined ports. Smallest change that satisfies spec.
 
-## 4. Ports & Adapters (hexagonal)
+## 4. Clean Architecture ports & adapters (hexagonal facet of ADR-0017)
 
 | Integration | Port (location) | Adapters | Env selection | Add new adapter |
 |---|---|---|---|---|
-| AI provider | `src/services/ai/provider.ts` — `AiProvider { parseIntent(), explainDiff(), translate() }` | `OpenAiAdapter`, `MockAiAdapter` | `AI_PROVIDER`, `AI_API_KEY`, `AI_MODEL` | Implement port with Zod schemas in `services/ai/schemas.ts`; add adapter file, update factory by env; callers unchanged. |
-| PayPal Payouts | `src/services/paypal/client.ts` + `auth.ts` + `payouts.ts` interfaces | `PayPalSandboxAdapter`, `MockPayPalAdapter` | `PAYPAL_ENV`, `PAYPAL_CLIENT_ID/SECRET/WEBHOOK_ID` | Implement port behind `services/paypal/`; register in factory; reuse `PayoutAttempt` idempotency guard. |
-| AG Studio analytics | `src/services/analytics/` port `AnalyticsPort` (aggregate-only) | `AgStudioAdapter`, `AgGridFallbackAdapter` | `AG_STUDIO_LICENSE_KEY` | Add adapter exposing same aggregate DTOs; UI unchanged. Fallback = grid only (ADR-0010). |
-| Email | `src/services/email/` port `EmailPort` | `NoopEmailAdapter`, `ResendAdapter` (post-MVP) | `EMAIL_PROVIDER` (optional) | Add adapter implementing `send()`, keep invitation links functional without email. |
-| Auth | `src/lib/auth/` (`AuthPort`) | `AuthJsCredentials` | `AUTH_SECRET` | New provider implements same session interface; route guards unchanged. |
-| DB | `PrismaClient` via `src/lib/db/` (repository ports) | `PrismaPostgres` | `DATABASE_URL` | Swap via Prisma datasource; services use repositories, not raw client in business code. |
+| AI provider | `src/application/ports/ai.ts` — `AiProvider { parseIntent(), explainDiff(), translate() }` | `OpenAiAdapter` (`src/infrastructure/ai/openai.ts`), `MockAiAdapter` | `AI_PROVIDER`, `AI_API_KEY`, `AI_MODEL` | Implement port with Zod schemas in `src/infrastructure/ai/schemas.ts`; add adapter file, update factory by env; callers unchanged. |
+| PayPal Payouts | `src/application/ports/paypal.ts` (`PayoutsPort`) | `PayPalSandboxAdapter` (`src/infrastructure/paypal/`), `MockPayPalAdapter` | `PAYPAL_ENV`, `PAYPAL_CLIENT_ID/SECRET/WEBHOOK_ID` | Implement port in `src/infrastructure/paypal/`; register in factory; reuse `PayoutAttempt` idempotency guard. |
+| AG Studio analytics | `src/application/ports/analytics.ts` (`AnalyticsPort`) (aggregate-only) | `AgStudioAdapter` (`src/infrastructure/analytics/`), `AgGridFallbackAdapter` | `AG_STUDIO_LICENSE_KEY` | Add adapter exposing same aggregate DTOs; UI unchanged. Fallback = grid only (ADR-0010). |
+| Email | `src/application/ports/email.ts` (`EmailPort`) | `NoopEmailAdapter`, `ResendAdapter` (post-MVP) | `EMAIL_PROVIDER` (optional) | Add adapter implementing `send()`, keep invitation links functional without email. |
+| Auth | `src/application/ports/auth.ts` (`AuthPort`) | `AuthJsCredentials` | `AUTH_SECRET` | New provider implements same session interface; route guards unchanged. |
+| DB | `src/application/ports/db.ts` (repository ports) | `PrismaPostgres` | `DATABASE_URL` | Swap via Prisma datasource; services use repositories, not raw client in business code. |
 
 - Every adapter: validate external responses with Zod, map to domain DTOs, redact secrets/PII in logs. Business callers depend only on ports (SOLID: single-responsibility services, dependency inversion). See ADR-0016.
 
@@ -114,7 +122,7 @@ const minor = money.toMinorUnits("500.00") // 50000
 # in package.json: "check:file-size": "npx tsx scripts/check-file-size.ts"
 # script: walk src/, fail if any file >300 LOC; also lint via eslint-plugin-check-file
 ```
-- Playbook: split services by responsibility (e.g. `paypal/client.ts` → `auth.ts`, `payouts.ts`, `status-mapping.ts`, `errors.ts`); extract hooks from components; move schemas to `schemas.ts`, mappers to `mappers.ts`; split components by `dashboard/disbursements/...` folders; delete dead code, never grow a god-file. If a file must grow, open an ADR exception with rationale. See ADR-0013.
+- Playbook: split use cases/adapters by responsibility (e.g. `infrastructure/paypal/client.ts` → `auth.ts`, `payouts.ts`, `status-mapping.ts`, `errors.ts`; keep `application/use-cases` ≤300 LOC); extract hooks from components; move schemas to `schemas.ts`, mappers to `mappers.ts`; split components by `dashboard/disbursements/...` folders; delete dead code, never grow a god-file. If a file must grow, open an ADR exception with rationale. See ADR-0013.
 
 ## 13. Commands cheat-sheet (placeholders until stack exists)
 
@@ -134,14 +142,14 @@ npm run seed                # seed
 
 - [ ] Meets spec § + maps to ADR(s); state machines untouched or ADR updated
 - [ ] Tests written first (red→green), pass locally; lint/typecheck/build green
-- [ ] File sizes ≤300 LOC; secrets only in env; logs redacted; money in minor units
+- [ ] File sizes ≤300 LOC; secrets only in env; logs redacted; money in minor units; no vendor SDK in domain/application (dependency rule)
 - [ ] PayPal: sender-batch persisted before call, single-submission lock, mock badge honored
 - [ ] AI: structured output validated, no invented amounts, fallback template exists
 - [ ] Docs updated (`verification-log.md`) with command + outcome + limitations
 
 ## 15. Third-Party Swap Playbook
 
-1. Add new adapter implementing existing port (`src/services/<name>/`).
+1. Add new adapter implementing existing port (`src/infrastructure/<name>/`).
 2. Add env var selection (e.g. `AI_PROVIDER=new`) + update `.env.example`.
 3. Map external response → domain DTO with Zod in adapter; keep business logic untouched.
 4. Add adapter contract tests; run full suite; update ADR status if contract changes.
@@ -160,7 +168,7 @@ npm run seed                # seed
 | Section | Spec |
 |---|---|
 | §1–§2, §5, §14 | Part A §4, Part G §21–22 |
-| §3–§4, §6 | Part C §7–§10, Part B §6–§10 |
+| §3–§4, §6 | Part C §7–§10, Part B §6–§10, ADR-0017 (Clean Architecture) |
 | §7–§10 | Part C §11–§13 |
 | §11 | Part E §17 |
 | §12–§15 | Engineering policy (ADR-0013) + Part F–G |

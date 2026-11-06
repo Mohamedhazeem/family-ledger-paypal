@@ -40,8 +40,8 @@ Companion to `docs/tech-stack.md`. Each entry cites its spec section. Read with 
 
 ## 8. pino over console
 - Spec: Part C §13 (redacted logs).
-- Decision: pino with explicit redaction list (authorization, cookie, paypal*secret*, *_token, receiver, free-text notes). `no-console` enforced in `src/services/**`.
-- Alternatives: console.log — banned in services.
+- Decision: pino with explicit redaction list (authorization, cookie, paypal*secret*, *_token, receiver, free-text notes). `no-console` enforced in `src/application/**` and `src/infrastructure/**`.
+- Alternatives: console.log — banned in services/application/infrastructure.
 
 ## 9. Tailwind v4 CSS-first (no tailwind.config.*)
 - Spec: Part C §7.
@@ -58,3 +58,7 @@ Companion to `docs/tech-stack.md`. Each entry cites its spec section. Read with 
 - Decision: Use `proxy.ts` for edge/middleware concerns per Next 16; `middleware.ts` is not used.
 - Alternatives: middleware.ts — legacy in Next 16.
 
+## 12. Clean Architecture layering over flat services
+- Spec: Part C §7–§8, ADR-0001, ADR-0011, ADR-0016.
+- Decision: Four-ring Clean Architecture (Entities → Use Cases → Ports → Adapters → Frameworks) with inward dependency rule; `src/domain`, `src/application/use-cases|ports`, `src/infrastructure/{ai,paypal,db,analytics,auth,email}`, `src/app`/`src/components` frameworks. Prevents vendor SDKs leaking into business rules; enables Vitest without DB/network; vendor swap by config. See ADR-0017.
+- Alternatives: Flat `src/services` + Hexagonal only — subsumed by Clean Architecture (Ports/Adapters facet retained).
