@@ -23,5 +23,24 @@ export default [
       "no-console": "error",
     },
   },
+  {
+    // Clean Architecture dependency rule (ADR-0017): domain/application
+    // must never import frameworks, Prisma, or vendor SDKs.
+    files: ["src/domain/**", "src/application/**"],
+    rules: {
+      "no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["next", "next/**", "react", "react/**", "@prisma/**", "prisma", "openai", "**/generated/**", "**/infrastructure/**"],
+              message: "domain/application must not import frameworks or infrastructure (ADR-0017). Depend on ports only.",
+            },
+          ],
+        },
+      ],
+    },
+  },
   { ignores: ["node_modules/**", ".next/**", "generated/**"] },
 ];

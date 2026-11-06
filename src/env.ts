@@ -1,6 +1,30 @@
 import { createEnv } from "@t3-oss/env-nextjs";
 import { z } from "zod";
 
+/**
+ * Boot-time environment schema (ADR-0015, spec §24).
+ *
+ * Validates every required variable with Zod at import time (imported by
+ * `instrumentation.ts`). A missing/invalid value throws a readable error so
+ * the process fails fast instead of running with undefined secrets.
+ *
+ * Required set is exactly spec §24; `PORT` is optional (Render injects it).
+ * No SDK imports; this module lives in the frameworks layer (src/).
+ */
+
+function pathToString(
+  path: readonly (PropertyKey | { readonly key: PropertyKey })[] | undefined,
+): string {
+  if (!path) return "";
+  return path
+    .map((segment) =>
+      typeof segment === "object" && segment !== null && "key" in segment
+        ? String(segment.key)
+        : String(segment),
+    )
+    .join(".");
+}
+
 export const env = createEnv({
   server: {
     NODE_ENV: z.enum(["development", "test", "production"]),
@@ -8,15 +32,16 @@ export const env = createEnv({
     AUTH_SECRET: z.string().min(16),
     DATABASE_URL: z.string().url(),
     APP_ENCRYPTION_KEY: z.string().min(32),
-    AI_PROVIDER: z.string().default("openai"),
-    AI_API_KEY: z.string().optional(),
-    AI_MODEL: z.string().optional(),
-    PAYPAL_ENV: z.enum(["sandbox", "live"]).default("sandbox"),
-    PAYPAL_CLIENT_ID: z.string().optional(),
-    PAYPAL_CLIENT_SECRET: z.string().optional(),
-    PAYPAL_WEBHOOK_ID: z.string().optional(),
-    AG_STUDIO_LICENSE_KEY: z.string().optional(),
-    DEMO_MODE: z.string().default("true"),
+    AI_PROVIDER: z.string().min(1),
+    AI_API_KEY: z.string().min(1),
+    AI_MODEL: z.string().min(1),
+    PAYPAL_ENV: z.enum(["sandbox", "live"]),
+    PAYPAL_CLIENT_ID: z.string().min(1),
+    PAYPAL_CLIENT_SECRET: z.string().min(1),
+    PAYPAL_WEBHOOK_ID: z.string().min(1),
+    AG_STUDIO_LICENSE_KEY: z.string().min(1),
+    DEMO_MODE: z.string().min(1),
+    PORT: z.coerce.number().int().positive().optional(),
   },
   client: {},
   runtimeEnv: {
@@ -34,5 +59,16 @@ export const env = createEnv({
     PAYPAL_WEBHOOK_ID: process.env.PAYPAL_WEBHOOK_ID,
     AG_STUDIO_LICENSE_KEY: process.env.AG_STUDIO_LICENSE_KEY,
     DEMO_MODE: process.env.DEMO_MODE,
+    PORT: process.env.PORT,
+  },
+  emptyStringAsUndefined: true,
+  onValidationError: (issues) => {
+    const fields = issues.map((issue) => pathToString(issue.path)).filter(Boolean);
+    const message = `Invalid environment variables: ${fields.length > 0 ? fields.join(", ") : "validation failed"}`;
+    console.error(`❌ ${message}`);
+    for (const issue of issues) {
+      console.error(`  - ${pathToString(issue.path) || "(root)"}: ${issue.message}`);
+    }
+    throw new Error(message);
   },
 });
