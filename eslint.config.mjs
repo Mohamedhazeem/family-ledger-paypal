@@ -1,7 +1,7 @@
 import core from "@eslint/js";
 import nextPlugin from "eslint-config-next";
 
-export default [
+const config = [
   core.configs.recommended,
   ...nextPlugin,
   {
@@ -44,3 +44,5 @@ export default [
   },
   { ignores: ["node_modules/**", ".next/**", "generated/**"] },
 ];
+
+export default config;
