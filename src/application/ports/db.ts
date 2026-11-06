@@ -23,20 +23,20 @@ export interface OrganizationInput {
 
 export interface UserRecord {
   id: string;
-  organizationId: string;
+  organizationId: string | null;
   name: string;
   email: string;
-  passwordHash: string;
+  passwordHash: string | null;
   role: UserRole;
   createdAt: Date;
   updatedAt: Date;
 }
 
 export interface UserInput {
-  organizationId: string;
+  organizationId: string | null;
   name: string;
   email: string;
-  passwordHash: string;
+  passwordHash: string | null;
   role: UserRole;
 }
 

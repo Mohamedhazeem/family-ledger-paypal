@@ -6,10 +6,10 @@ export const organizationInputSchema = z.object({
 });
 
 export const userInputSchema = z.object({
-  organizationId: z.string().min(1),
+  organizationId: z.string().min(1).nullable().optional(),
   name: z.string().trim().min(1),
   email: z.string().trim().email(),
-  passwordHash: z.string().min(1),
+  passwordHash: z.string().min(1).nullable().optional(),
   role: z.enum(["ADMIN", "COORDINATOR"]),
 });
 
