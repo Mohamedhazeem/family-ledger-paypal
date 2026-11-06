@@ -16,8 +16,8 @@ Hackathon MVP: USD only, sandbox PayPal, synthetic data.
 ## Judge / demo credentials
 
 - Email: `alex.morgan@example.com`
-- Password: set via Better Auth on first run (placeholder hash in seed; replace in
-  your own DB before demo). Do not commit real credentials.
+- Password: `DemoPass123!` (seeded by `npm run db:seed`; change before any
+  non-demo use). Do not commit real credentials.
 
 ## Commands
 
