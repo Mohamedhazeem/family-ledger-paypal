@@ -72,3 +72,4 @@ paypal-*.json
 
 # ---> Environment templates are tracked (placeholders only)
 # (covered by !.env.example above)
+generated/

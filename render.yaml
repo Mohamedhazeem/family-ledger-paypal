@@ -1,0 +1,39 @@
+services:
+  - type: web
+    name: family-ledger
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build
+    preDeployCommand: npm run db:deploy
+    startCommand: npm run start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "10000"
+      - key: PAYPAL_ENV
+        value: sandbox
+      - key: DEMO_MODE
+        value: "true"
+      - key: DATABASE_URL
+        sync: false
+      - key: AUTH_SECRET
+        sync: false
+      - key: APP_ENCRYPTION_KEY
+        sync: false
+      - key: AI_PROVIDER
+        value: openai
+      - key: PAYPAL_CLIENT_ID
+        sync: false
+      - key: PAYPAL_CLIENT_SECRET
+        sync: false
+      - key: AG_STUDIO_LICENSE_KEY
+        sync: false
+databases:
+  - name: family-ledger-db
+    plan: free
+    databaseName: family_ledger
+    user: family_ledger
+    enableDataTransfer: false
+    deleteProtection: false
+    highAvailability: false
