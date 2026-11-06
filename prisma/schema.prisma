@@ -66,60 +66,108 @@ model Organization {
 }
 
 model User {
-  id                 String         @id @default(cuid())
-  organizationId     String
-  organization       Organization   @relation(fields: [organizationId], references: [id], onDelete: Restrict)
-  name               String
-  email              String
-  passwordHash       String
-  role               Role
+  id                       String         @id @default(cuid())
+  organizationId           String?
+  organization             Organization?  @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  name                     String
+  email                    String         @unique
+  emailVerified            Boolean        @default(false)
+  image                    String?
+  passwordHash             String?
+  role                     Role           @default(COORDINATOR)
   coordinatedDisbursements Disbursement[] @relation("DisbursementCoordinator")
-  createdAt          DateTime       @default(now())
-  updatedAt          DateTime       @updatedAt
+  sessions                 Session[]
+  accounts                 Account[]
+  createdAt                DateTime       @default(now())
+  updatedAt                DateTime       @updatedAt
 
   @@index([organizationId])
 }
 
 model Beneficiary {
-  id                        String            @id @default(cuid())
-  organizationId            String
-  organization              Organization      @relation(fields: [organizationId], references: [id], onDelete: Restrict)
-  displayName               String
-  invitationEmail           String
-  encryptedPayPalRecipient  String
-  preferredLanguage         PreferredLanguage
-  disbursements             Disbursement[]
-  createdAt                 DateTime          @default(now())
-  updatedAt                 DateTime          @updatedAt
+  id                       String            @id @default(cuid())
+  organizationId           String
+  organization             Organization      @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  displayName              String
+  invitationEmail          String
+  encryptedPayPalRecipient String
+  preferredLanguage        PreferredLanguage
+  disbursements            Disbursement[]
+  createdAt                DateTime          @default(now())
+  updatedAt                DateTime          @updatedAt
 
   @@index([organizationId])
 }
 
 model Disbursement {
-  id                                String       @id @default(cuid())
-  publicReference                   String       @unique
-  organizationId                    String
-  organization                      Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
-  coordinatorId                     String
-  coordinator                       User         @relation("DisbursementCoordinator", fields: [coordinatorId], references: [id], onDelete: Restrict)
-  beneficiaryId                     String
-  beneficiary                       Beneficiary  @relation(fields: [beneficiaryId], references: [id], onDelete: Restrict)
-  amountMinor                       BigInt
-  currency                          String       @default("USD")
-  supportNote                       String       @db.Text
-  shareSupportNoteWithBeneficiary   Boolean      @default(false)
-  planStatus                        PlanStatus   @default(DRAFT)
-  paymentStatus                     PaymentStatus @default(NOT_SENT)
-  paypalPayoutBatchId               String?
-  paypalPayoutItemId                String?
-  paypalBatchStatus                 String?
-  paypalItemStatus                  String?
-  paymentMode                       PaymentMode @default(SANDBOX)
-  createdAt                         DateTime     @default(now())
-  updatedAt                         DateTime     @updatedAt
+  id                              String        @id @default(cuid())
+  publicReference                 String        @unique
+  organizationId                  String
+  organization                    Organization  @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  coordinatorId                   String
+  coordinator                     User          @relation("DisbursementCoordinator", fields: [coordinatorId], references: [id], onDelete: Restrict)
+  beneficiaryId                   String
+  beneficiary                     Beneficiary   @relation(fields: [beneficiaryId], references: [id], onDelete: Restrict)
+  amountMinor                     BigInt
+  currency                        String        @default("USD")
+  supportNote                     String        @db.Text
+  shareSupportNoteWithBeneficiary Boolean       @default(false)
+  planStatus                      PlanStatus    @default(DRAFT)
+  paymentStatus                   PaymentStatus @default(NOT_SENT)
+  paypalPayoutBatchId             String?
+  paypalPayoutItemId              String?
+  paypalBatchStatus               String?
+  paypalItemStatus                String?
+  paymentMode                     PaymentMode   @default(SANDBOX)
+  createdAt                       DateTime      @default(now())
+  updatedAt                       DateTime      @updatedAt
 
   @@index([organizationId])
   @@index([organizationId, createdAt])
   @@index([organizationId, paymentStatus])
   @@index([organizationId, planStatus])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
 }
