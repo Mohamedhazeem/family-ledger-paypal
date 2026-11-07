@@ -14,6 +14,7 @@ function stubProvider(plan: ExtractedPlan): AiProvider {
   return {
     ping: async () => ({ provider: "openai", model: "test-model" }),
     parseIntent: async () => plan,
+    explainDiff: async () => ({ explanation: "unused" }),
   };
 }
 

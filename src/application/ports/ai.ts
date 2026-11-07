@@ -3,10 +3,16 @@
  * Defined in the application layer; adapters implement it from the
  * environment. No vendor SDK imports here.
  */
+import type { PlanDiff } from "@/domain/plan-diff";
 
 export interface AiPingResult {
   provider: string;
   model: string;
+}
+
+export interface ExplainDiffResult {
+  /** Neutral, short explanation produced by the model from the diff only. */
+  explanation: string;
 }
 
 export interface ParseIntentInput {
@@ -39,4 +45,9 @@ export interface AiProvider {
    * model output against the extraction schema before returning.
    */
   parseIntent(_input: ParseIntentInput): Promise<ExtractedPlan>;
+  /**
+   * Explains a deterministic diff between two plan versions. The model
+   * receives only the diff; it must not compute amounts.
+   */
+  explainDiff(_diff: PlanDiff): Promise<ExplainDiffResult>;
 }

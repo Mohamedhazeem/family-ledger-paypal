@@ -1,6 +1,7 @@
 import "server-only";
 import OpenAI from "openai";
-import type { AiPingResult, AiProvider, ExtractedPlan, ParseIntentInput } from "@/application/ports/ai";
+import type { AiPingResult, AiProvider, ExplainDiffResult, ExtractedPlan, ParseIntentInput } from "@/application/ports/ai";
+import type { PlanDiff } from "@/domain/plan-diff";
 import { ExtractedPlanSchema } from "./schemas";
 
 /**
@@ -98,4 +99,45 @@ export class OpenAiAdapter implements AiProvider {
     }
     return parsed.data;
   }
+
+  /**
+   * Explains a deterministic diff (spec §12B). The model receives only
+   * the computed diff; it must not compute amounts or judge spending.
+   */
+  async explainDiff(diff: PlanDiff): Promise<ExplainDiffResult> {
+    const completion = await this.client.chat.completions.create({
+      model: this.model,
+      messages: [
+        {
+          role: "system",
+          content:
+            "You explain the difference between two voluntary family-support allocation plans. " +
+            "Reply with one short, neutral sentence using ONLY the provided diff. " +
+            "Do not compute or invent amounts. Do not use language like misused, failed, suspicious or spent incorrectly.",
+        },
+        {
+          role: "user",
+          content: JSON.stringify({
+            added: diff.added.map(serializeEntry),
+            removed: diff.removed.map(serializeEntry),
+            changed: diff.changed.map(serializeEntry),
+          }),
+        },
+      ],
+    });
+    const content = completion.choices[0]?.message?.content?.trim();
+    if (!content) {
+      throw new Error("AI provider returned an empty response.");
+    }
+    return { explanation: content };
+  }
+}
+
+function serializeEntry(entry: PlanDiff["added"][number]) {
+  return {
+    category: entry.category,
+    v1AmountMinor: entry.v1AmountMinor === null ? null : entry.v1AmountMinor.toString(),
+    v2AmountMinor: entry.v2AmountMinor === null ? null : entry.v2AmountMinor.toString(),
+    deltaMinor: entry.deltaMinor === null ? null : entry.deltaMinor.toString(),
+  };
 }
