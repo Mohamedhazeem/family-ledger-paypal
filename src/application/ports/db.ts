@@ -119,6 +119,12 @@ export interface DisbursementRepository {
   findByPublicReference(_publicReference: string): Promise<DisbursementRecord | null>;
   updatePlanStatus(_id: string, _status: PlanStatus): Promise<DisbursementRecord>;
   updatePaymentStatus(_id: string, _status: PaymentStatus): Promise<DisbursementRecord>;
+  /**
+   * Single-submission lock (spec §11): atomically flips the status to
+   * SUBMITTING only from NOT_SENT/READY. Returns true when this
+   * caller won the claim.
+   */
+  claimForSubmission(_id: string): Promise<boolean>;
   updatePayoutFields(
     _id: string,
     _data: Partial<{

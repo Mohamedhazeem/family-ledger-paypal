@@ -14,6 +14,7 @@ import { decryptField } from "@/lib/security/encryption";
 
 export class DisbursementNotFoundError extends Error {}
 export class CoordinatorMismatchError extends Error {}
+export class PayoutNotSubmittableError extends Error {}
 
 export interface SubmitPayoutInput {
   coordinatorId: string;
@@ -21,6 +22,9 @@ export interface SubmitPayoutInput {
 }
 
 export interface SubmitPayoutResult {
+  /** Winner of the claim (or the existing attempt for losers). */
+  senderBatchId: string;
+  attemptState: import("@/application/ports/db").AttemptState;
   paypalPayoutBatchId: string | null;
   paymentStatus: PaymentStatus;
 }
@@ -81,18 +85,40 @@ export class SubmitPayout {
     return attempt;
   }
 
-  /** Full submission: begin, POST one full-amount batch, finalize. */
+  /** Full submission: claim, begin, POST one full-amount batch, finalize. */
   async execute(input: SubmitPayoutInput): Promise<SubmitPayoutResult> {
     const disbursement = await this.disbursements.findById(input.disbursementId);
     if (!disbursement) {
       throw new DisbursementNotFoundError("Disbursement not found.");
     }
-    // Eligible on payment state alone (spec §4.4); plan status never gates.
+    if (disbursement.coordinatorId !== input.coordinatorId) {
+      throw new CoordinatorMismatchError("Not your disbursement.");
+    }
+
+    // Single-submission lock (spec §11): exactly one caller claims
+    // the transition to SUBMITTING. Losers get the winner's batch id
+    // without another outbound call. Eligible on payment state alone
+    // (spec §4.4); plan status never gates.
     if (!canSubmitPayout(disbursement)) {
-      throw new Error(
+      throw new PayoutNotSubmittableError(
         `Payout cannot be submitted while payment status is ${disbursement.paymentStatus}.`,
       );
     }
+    const won = await this.disbursements.claimForSubmission(disbursement.id);
+    if (!won) {
+      const existing = await this.waitForAttempt(disbursement.id);
+      if (!existing) {
+        throw new PayoutNotSubmittableError("A payout is already in flight for this disbursement.");
+      }
+      const current = await this.disbursements.findById(disbursement.id);
+      return {
+        senderBatchId: existing.senderBatchId,
+        attemptState: existing.attemptState,
+        paypalPayoutBatchId: existing.paypalPayoutBatchId,
+        paymentStatus: current!.paymentStatus,
+      };
+    }
+
     const attempt = await this.begin(input);
 
     const key = process.env.APP_ENCRYPTION_KEY;
@@ -126,7 +152,7 @@ export class SubmitPayout {
         responsePayloadRedacted: error instanceof Error ? error.message : String(error),
       });
       await this.disbursements.updatePaymentStatus(disbursement.id, paymentStatus);
-      return { paypalPayoutBatchId: null, paymentStatus };
+      return { senderBatchId: attempt.senderBatchId, attemptState: "UNKNOWN", paypalPayoutBatchId: null, paymentStatus };
     }
 
     await this.attempts.update(attempt.id, {
@@ -150,7 +176,22 @@ export class SubmitPayout {
         batchStatus: result.batchStatus,
       }),
     });
-    return { paypalPayoutBatchId: result.payoutBatchId, paymentStatus: result.paymentStatus };
+    return {
+      senderBatchId: attempt.senderBatchId,
+      attemptState: "ACKNOWLEDGED",
+      paypalPayoutBatchId: result.payoutBatchId,
+      paymentStatus: result.paymentStatus,
+    };
+  }
+
+  /** Losing callers see the winner's attempt once the row exists. */
+  private async waitForAttempt(disbursementId: string) {
+    for (let i = 0; i < 40; i++) {
+      const attempt = await this.attempts.findLatestByDisbursementId(disbursementId);
+      if (attempt) return attempt;
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    return null;
   }
 }
 
