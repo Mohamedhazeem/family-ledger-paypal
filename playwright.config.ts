@@ -25,16 +25,19 @@ function loadEnvFile(): void {
 }
 loadEnvFile();
 
+// E2E_BASE_URL targets a deployed instance (Slice 5.3); unset ⇒ local.
 // APP_URL is read directly (it is the only value the config needs);
 // src/env.ts stays the authority for everything else.
-const appUrl = process.env.APP_URL || "http://localhost:3000";
+const appUrl = process.env.E2E_BASE_URL || process.env.APP_URL || "http://localhost:3000";
 
 export default defineConfig({
   testDir: "./tests/e2e",
   use: { baseURL: appUrl },
-  webServer: {
-    command: "npm run dev",
-    url: appUrl,
-    reuseExistingServer: !process.env.CI,
-  },
+  webServer: process.env.E2E_BASE_URL
+    ? undefined
+    : {
+        command: "npm run dev",
+        url: appUrl,
+        reuseExistingServer: !process.env.CI,
+      },
 });
