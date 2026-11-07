@@ -222,6 +222,9 @@ export interface RecipientInvitationInput {
 /** Invitation repository: creation plus token lookup and view tracking. */
 export interface RecipientInvitationRepository {
   create(_input: RecipientInvitationInput): Promise<RecipientInvitationRecord>;
+  findById(_id: string): Promise<RecipientInvitationRecord | null>;
   findByTokenHash(_tokenHash: string): Promise<RecipientInvitationRecord | null>;
+  listByDisbursementId(_disbursementId: string): Promise<RecipientInvitationRecord[]>;
+  revoke(_id: string, _revokedAt: Date): Promise<RecipientInvitationRecord>;
   markViewed(_id: string, _viewedAt: Date): Promise<void>;
 }

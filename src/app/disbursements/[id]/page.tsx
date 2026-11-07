@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { AcknowledgeButton } from "@/components/disbursements/acknowledge-button";
 import { ExplainDiffButton } from "@/components/disbursements/explain-diff-button";
+import { RevokeInvitationButton } from "@/components/disbursements/revoke-invitation-button";
 import { SendPaymentButton } from "@/components/disbursements/send-payment-button";
 
 /**
@@ -59,6 +60,11 @@ export default async function DisbursementDetailPage({
           },
         )
       : null;
+
+  const invitations = await prisma.recipientInvitation.findMany({
+    where: { disbursementId: id },
+    orderBy: { createdAt: "desc" },
+  });
 
   return (
     <div className="space-y-6">
@@ -185,6 +191,37 @@ export default async function DisbursementDetailPage({
           </CardContent>
         </Card>
       ) : null}
+
+      <Card>
+        <CardContent className="space-y-4 pt-5">
+          <h2 className="text-base font-semibold text-slate-900">Invitations</h2>
+          {invitations.length === 0 ? (
+            <p className="text-sm text-slate-500">No invitations yet.</p>
+          ) : (
+            <ul className="space-y-2">
+              {invitations.map((invitation) => {
+                // eslint-disable-next-line react-hooks/purity -- server render, evaluated once per request
+                const expired = invitation.expiresAt.getTime() <= Date.now();
+                const status = invitation.revokedAt ? "Revoked" : expired ? "Expired" : "Active";
+                return (
+                  <li key={invitation.id} className="flex flex-wrap items-center justify-between gap-2 py-1.5">
+                    <span className="text-sm text-slate-700">
+                      Link · expires {invitation.expiresAt.toLocaleDateString()} ·{" "}
+                      <span className="font-medium">{status}</span>
+                    </span>
+                    {status === "Active" ? (
+                      <RevokeInvitationButton
+                        disbursementId={disbursement.id}
+                        invitationId={invitation.id}
+                      />
+                    ) : null}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardContent className="space-y-4 pt-5">

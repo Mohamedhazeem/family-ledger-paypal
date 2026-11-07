@@ -143,6 +143,21 @@ export class PrismaRecipientInvitationRepository implements RecipientInvitationR
     return prisma.recipientInvitation.findUnique({ where: { tokenHash } });
   }
 
+  async findById(id: string): Promise<RecipientInvitationRecord | null> {
+    return prisma.recipientInvitation.findUnique({ where: { id } });
+  }
+
+  async listByDisbursementId(disbursementId: string): Promise<RecipientInvitationRecord[]> {
+    return prisma.recipientInvitation.findMany({
+      where: { disbursementId },
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
+  async revoke(id: string, revokedAt: Date): Promise<RecipientInvitationRecord> {
+    return prisma.recipientInvitation.update({ where: { id }, data: { revokedAt } });
+  }
+
   async markViewed(id: string, viewedAt: Date): Promise<void> {
     await prisma.recipientInvitation.update({
       where: { id },
