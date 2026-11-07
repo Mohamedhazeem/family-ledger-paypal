@@ -74,6 +74,8 @@ function stubRepos() {
       created.planItems = items;
       return items as never;
     },
+    findLatestByDisbursementId: async () => { throw new Error("unused"); },
+    findItemsByVersionId: async () => [],
   };
   const ledger = {
     create: async (input: unknown) => {

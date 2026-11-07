@@ -105,6 +105,20 @@ export class PrismaPlanVersionRepository implements PlanVersionRepository {
       orderBy: { sortOrder: "asc" },
     });
   }
+
+  async findLatestByDisbursementId(disbursementId: string): Promise<PlanVersionRecord | null> {
+    return prisma.planVersion.findFirst({
+      where: { disbursementId },
+      orderBy: { versionNumber: "desc" },
+    });
+  }
+
+  async findItemsByVersionId(planVersionId: string): Promise<PlanItemRecord[]> {
+    return prisma.planItem.findMany({
+      where: { planVersionId },
+      orderBy: { sortOrder: "asc" },
+    });
+  }
 }
 
 /** Append-only ledger (spec §9): create-only port. */
@@ -119,5 +133,16 @@ export class PrismaRecipientInvitationRepository implements RecipientInvitationR
   async create(input: RecipientInvitationInput): Promise<RecipientInvitationRecord> {
     const data = recipientInvitationInputSchema.parse(input);
     return prisma.recipientInvitation.create({ data });
+  }
+
+  async findByTokenHash(tokenHash: string): Promise<RecipientInvitationRecord | null> {
+    return prisma.recipientInvitation.findUnique({ where: { tokenHash } });
+  }
+
+  async markViewed(id: string, viewedAt: Date): Promise<void> {
+    await prisma.recipientInvitation.update({
+      where: { id },
+      data: { lastViewedAt: viewedAt },
+    });
   }
 }

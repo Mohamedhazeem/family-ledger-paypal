@@ -173,6 +173,8 @@ export interface PlanItemInput {
 export interface PlanVersionRepository {
   create(_input: PlanVersionInput): Promise<PlanVersionRecord>;
   createItems(_inputs: PlanItemInput[]): Promise<PlanItemRecord[]>;
+  findLatestByDisbursementId(_disbursementId: string): Promise<PlanVersionRecord | null>;
+  findItemsByVersionId(_planVersionId: string): Promise<PlanItemRecord[]>;
 }
 
 export interface LedgerEventRecord {
@@ -214,7 +216,9 @@ export interface RecipientInvitationInput {
   expiresAt: Date;
 }
 
-/** Create-only in this slice; revocation lookup lands in 3.2/3.11. */
+/** Invitation repository: creation plus token lookup and view tracking. */
 export interface RecipientInvitationRepository {
   create(_input: RecipientInvitationInput): Promise<RecipientInvitationRecord>;
+  findByTokenHash(_tokenHash: string): Promise<RecipientInvitationRecord | null>;
+  markViewed(_id: string, _viewedAt: Date): Promise<void>;
 }
