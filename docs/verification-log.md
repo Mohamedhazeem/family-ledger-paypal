@@ -12,6 +12,7 @@ Format: date, command, outcome, known limitation.
 - 2026-11-07 Slice 2.1 AI port + adapter — `npx vitest run src/infrastructure/ai/provider.test.ts`: 4/4 passed (builds from env, AI_BASE_URL change flips adapter baseURL, unknown provider throws, ping returns provider+model). `npx tsc --noEmit` 0, `npm run lint` 0 errors, `npm test` 8 files/33 tests passed, `npm run build` success (route `/api/ai/ping`). M check: `npm run start -p 3177`, `curl http://localhost:3177/api/ai/ping` → HTTP 200 `{"provider":"openai","model":"google/gemma-4-31b-it"}`.
 
 Known limitations:
+- Slice 5.3: README final pass left as-is (credentials/API links from 1.x); Day-6 items (video, Devpost, screenshots) are user-driven.
 - Slice 5.1: the live branch of the analytics workspace is the AG Grid fallback (AG_STUDIO_LICENSE_KEY is empty in .env, so the AG Studio canvas is not exercised yet — it activates when a key is set, per ADR-0010's licensing caveat). The studio embed is build/type-verified only.
 - Slice 3.12: timeline labels are English only (EN/TA/HI dictionaries cover portal chrome; timeline labels are not yet in the dictionaries). Append-only is enforced at the application layer (create-only port + delete/update absent); no DB-level trigger/rule guarding against direct SQL edits.
 - Slice 3.8: the shared coordinator PlanItemsEditor's micro-labels (Category/Amount rows, Add/Delete controls) stay in English on the beneficiary suggest form — only portal chrome, consent, and action labels are localized. Static labels only (no AI translation, per NOT).
