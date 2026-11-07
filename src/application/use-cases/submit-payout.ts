@@ -95,6 +95,18 @@ export class SubmitPayout {
       throw new CoordinatorMismatchError("Not your disbursement.");
     }
 
+    // Retry path (spec §11): a STATUS_UNKNOWN outcome means the
+    // previous call may or may not have landed. Re-POST with the
+    // SAME sender batch id — PayPal dedupes within 30 days — and
+    // the single attempt row resolves. Never regenerate the id.
+    if (disbursement.paymentStatus === "STATUS_UNKNOWN") {
+      const existing = await this.attempts.findLatestByDisbursementId(disbursement.id);
+      if (existing) {
+        await this.disbursements.updatePaymentStatus(disbursement.id, "SUBMITTING");
+        return this.runBatch(existing, disbursement, input);
+      }
+    }
+
     // Single-submission lock (spec §11): exactly one caller claims
     // the transition to SUBMITTING. Losers get the winner's batch id
     // without another outbound call. Eligible on payment state alone
@@ -120,7 +132,15 @@ export class SubmitPayout {
     }
 
     const attempt = await this.begin(input);
+    return this.runBatch(attempt, disbursement, input);
+  }
 
+  /** Re-POSTs one batch for an existing attempt and finalizes it. */
+  private async runBatch(
+    attempt: PayoutAttemptRecord,
+    disbursement: { id: string; publicReference: string; beneficiaryId: string; amountMinor: bigint; currency: string },
+    input: SubmitPayoutInput,
+  ): Promise<SubmitPayoutResult> {
     const key = process.env.APP_ENCRYPTION_KEY;
     if (!key) {
       throw new Error("APP_ENCRYPTION_KEY is not set.");
