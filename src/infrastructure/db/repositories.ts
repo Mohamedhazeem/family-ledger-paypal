@@ -87,6 +87,10 @@ export class PrismaDisbursementRepository implements DisbursementRepository {
   async findByPublicReference(publicReference: string): Promise<DisbursementRecord | null> {
     return prisma.disbursement.findUnique({ where: { publicReference } });
   }
+
+  async updatePlanStatus(id: string, status: DisbursementRecord["planStatus"]): Promise<DisbursementRecord> {
+    return prisma.disbursement.update({ where: { id }, data: { planStatus: status } });
+  }
 }
 
 /** Immutable plan snapshots: create-only port, no update/delete (spec §9). */

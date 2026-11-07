@@ -12,6 +12,7 @@ import {
 } from "@/infrastructure/db/repositories";
 import { RateLimit } from "@/lib/security/rate-limit";
 import { Card, CardContent } from "@/components/ui/card";
+import { AcceptPlanButton } from "@/components/beneficiary/accept-plan-button";
 
 /**
  * GET /beneficiary/[token] (Slice 3.2, spec §14F, §13): public,
@@ -111,6 +112,9 @@ export default async function BeneficiaryPage({
             conditional on sharing. FamilyLedger never asks for receipts and does not track how
             you spend. If something in this plan does not work for you, tell your coordinator.
           </p>
+          <div className="mt-4">
+            <AcceptPlanButton token={token} />
+          </div>
         </CardContent>
       </Card>
     </main>

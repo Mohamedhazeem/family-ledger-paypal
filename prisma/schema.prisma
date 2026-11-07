@@ -146,6 +146,7 @@ model PlanVersion {
   createdByType       ActorType
   createdById         String?
   summary             String
+  explanation         String?
   status              String       @default("DRAFT")
   totalAllocatedMinor BigInt
   unallocatedMinor    BigInt
