@@ -99,6 +99,33 @@ async function main(): Promise<void> {
     },
   });
 
+  // Demo MOCK-mode row: badge state + an unknown (FOO) raw status to
+  // prove unknowns surface verbatim instead of being coerced.
+  await prisma.disbursement.upsert({
+    where: { publicReference: "FL-SEED-002" },
+    update: {
+      paymentMode: "MOCK",
+      paypalBatchStatus: "FOO",
+      paypalItemStatus: "FOO",
+    },
+    create: {
+      id: "seed-disbursement-mock",
+      publicReference: "FL-SEED-002",
+      organizationId: organization.id,
+      coordinatorId: coordinator.id,
+      beneficiaryId: beneficiary.id,
+      amountMinor: AMOUNT_MINOR,
+      currency: "USD",
+      supportNote: "Mock-mode demo row (synthetic, no live money).",
+      shareSupportNoteWithBeneficiary: false,
+      planStatus: "DRAFT",
+      paymentStatus: "ON_HOLD",
+      paymentMode: "MOCK",
+      paypalBatchStatus: "FOO",
+      paypalItemStatus: "FOO",
+    },
+  });
+
   console.warn("Seed complete: Community Family Support Programme -> Maria Santos USD 500.00");
   console.warn(`Coordinator login: ${COORDINATOR_EMAIL} / ${COORDINATOR_PASSWORD}`);
 }

@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { prisma } from "@/infrastructure/db/prisma";
 import { getSession } from "@/lib/auth/session";
 import { formatMinor } from "@/domain/value-objects/money";
+import { friendlyBatchStatus } from "@/domain/payout-status";
 import { diffPlans } from "@/domain/plan-diff";
 import { visibleTimeline } from "@/domain/timeline";
 import { formatStatusLabel, toneForStatus } from "@/app/dashboard/disbursement-formatting";
@@ -11,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { AcknowledgeButton } from "@/components/disbursements/acknowledge-button";
 import { ExplainDiffButton } from "@/components/disbursements/explain-diff-button";
+import { RefreshPayoutStatusButton } from "@/components/disbursements/refresh-payout-status-button";
 import { RevokeInvitationButton } from "@/components/disbursements/revoke-invitation-button";
 import { SendPaymentButton } from "@/components/disbursements/send-payment-button";
 
@@ -95,14 +97,18 @@ export default async function DisbursementDetailPage({
           <p className="mt-1 text-4xl font-bold tabular-nums text-slate-900">
             ${formatMinor(disbursement.amountMinor)} {disbursement.currency}
           </p>
-          <dl className="mt-4 grid gap-2 text-sm sm:grid-cols-2">
-            <div>
-              <dt className="text-slate-500">PayPal batch</dt>
-              <dd className="font-medium text-slate-800">{disbursement.paypalBatchStatus ?? "—"}</dd>
+          <dl className="mt-4 space-y-3">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+              <span className="text-slate-500">PayPal batch</span>
+              <Badge tone="info">{friendlyBatchStatus(disbursement.paypalBatchStatus)}</Badge>
+              <span className="text-slate-500">PayPal item</span>
+              <Badge tone="info">{friendlyBatchStatus(disbursement.paypalItemStatus)}</Badge>
+              {disbursement.paymentMode === "MOCK" ? (
+                <Badge tone="warning">MOCK PAYMENT</Badge>
+              ) : null}
             </div>
             <div>
-              <dt className="text-slate-500">PayPal item</dt>
-              <dd className="font-medium text-slate-800">{disbursement.paypalItemStatus ?? "—"}</dd>
+              <RefreshPayoutStatusButton disbursementId={disbursement.id} />
             </div>
           </dl>
         </CardContent>
