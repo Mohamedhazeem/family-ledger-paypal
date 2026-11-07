@@ -12,6 +12,7 @@ Format: date, command, outcome, known limitation.
 - 2026-11-07 Slice 2.1 AI port + adapter — `npx vitest run src/infrastructure/ai/provider.test.ts`: 4/4 passed (builds from env, AI_BASE_URL change flips adapter baseURL, unknown provider throws, ping returns provider+model). `npx tsc --noEmit` 0, `npm run lint` 0 errors, `npm test` 8 files/33 tests passed, `npm run build` success (route `/api/ai/ping`). M check: `npm run start -p 3177`, `curl http://localhost:3177/api/ai/ping` → HTTP 200 `{"provider":"openai","model":"google/gemma-4-31b-it"}`.
 
 Known limitations:
+- Slice 2.3: no HTTP route (2.5) and no persistence (2.7). The extraction prompt lives in the adapter; `response_format` is intentionally not set (not all OpenAI-compatible endpoints accept it) — JSON shape is enforced by the Zod schema instead.
 - Slice 2.2: schema only. No prompt and no model invocation yet (prompt = next slice, invocation = 2.3); `amountText` shape is regex-validated here and converted to minor units in the use case.
 - Slice 2.1: port has only the config probe `ping()`; no model call is made yet (model invocation lands in 2.3). No Mock adapter — MSW will stand in for external calls in later-slice tests. `AI_BASE_URL` is an optional env var (defaults to the OpenAI SDK default when unset).
 - Slice 1.3: only Organization/User/Beneficiary/Disbursement exist; later-slice models, seed and auth are not yet implemented.
