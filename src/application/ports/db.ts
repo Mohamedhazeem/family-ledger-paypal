@@ -197,3 +197,24 @@ export interface LedgerEventInput {
 export interface LedgerEventRepository {
   create(_input: LedgerEventInput): Promise<LedgerEventRecord>;
 }
+
+export interface RecipientInvitationRecord {
+  id: string;
+  disbursementId: string;
+  tokenHash: string;
+  expiresAt: Date;
+  revokedAt: Date | null;
+  createdAt: Date;
+  lastViewedAt: Date | null;
+}
+
+export interface RecipientInvitationInput {
+  disbursementId: string;
+  tokenHash: string;
+  expiresAt: Date;
+}
+
+/** Create-only in this slice; revocation lookup lands in 3.2/3.11. */
+export interface RecipientInvitationRepository {
+  create(_input: RecipientInvitationInput): Promise<RecipientInvitationRecord>;
+}

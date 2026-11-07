@@ -101,3 +101,9 @@ export const ledgerEventInputSchema = z.object({
   eventType: z.string().trim().min(1),
   payloadJson: z.string().min(1),
 });
+
+export const recipientInvitationInputSchema = z.object({
+  disbursementId: z.string().min(1),
+  tokenHash: z.string().min(1),
+  expiresAt: z.date(),
+});

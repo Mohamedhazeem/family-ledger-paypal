@@ -17,6 +17,9 @@ import type {
   PlanVersionInput,
   PlanVersionRecord,
   PlanVersionRepository,
+  RecipientInvitationInput,
+  RecipientInvitationRecord,
+  RecipientInvitationRepository,
   UserInput,
   UserRecord,
   UserRepository,
@@ -29,6 +32,7 @@ import {
   organizationInputSchema,
   planItemInputSchema,
   planVersionInputSchema,
+  recipientInvitationInputSchema,
   userInputSchema,
 } from "@/infrastructure/db/schemas";
 
@@ -108,5 +112,12 @@ export class PrismaLedgerEventRepository implements LedgerEventRepository {
   async create(input: LedgerEventInput): Promise<LedgerEventRecord> {
     const data = ledgerEventInputSchema.parse(input);
     return prisma.ledgerEvent.create({ data });
+  }
+}
+
+export class PrismaRecipientInvitationRepository implements RecipientInvitationRepository {
+  async create(input: RecipientInvitationInput): Promise<RecipientInvitationRecord> {
+    const data = recipientInvitationInputSchema.parse(input);
+    return prisma.recipientInvitation.create({ data });
   }
 }
