@@ -79,6 +79,7 @@ export const planVersionInputSchema = z.object({
   createdByType: z.enum(["COORDINATOR", "BENEFICIARY", "SYSTEM"]),
   createdById: z.string().min(1).nullable(),
   summary: z.string(),
+  explanation: z.string().nullable().optional(),
   status: z.string().min(1),
   totalAllocatedMinor: z.bigint().nonnegative(),
   unallocatedMinor: z.bigint().nonnegative(),

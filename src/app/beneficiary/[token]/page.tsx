@@ -13,6 +13,8 @@ import {
 import { RateLimit } from "@/lib/security/rate-limit";
 import { Card, CardContent } from "@/components/ui/card";
 import { AcceptPlanButton } from "@/components/beneficiary/accept-plan-button";
+import { SuggestChangesForm } from "@/components/beneficiary/suggest-changes-form";
+import { minorToDecimal } from "@/components/disbursements/money-client";
 
 /**
  * GET /beneficiary/[token] (Slice 3.2, spec §14F, §13): public,
@@ -115,6 +117,24 @@ export default async function BeneficiaryPage({
           <div className="mt-4">
             <AcceptPlanButton token={token} />
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="space-y-4 pt-5">
+          <h2 className="text-base font-semibold text-slate-900">Suggest changes</h2>
+          <p className="text-sm leading-6 text-slate-600">
+            Need different categories or amounts? Update the plan below and send your suggestions —
+            your coordinator reviews them with you. Nothing changes until they agree.
+          </p>
+          <SuggestChangesForm
+            token={token}
+            totalMinor={Number(view.amountMinor)}
+            initialItems={view.items.map((item) => ({
+              category: item.category,
+              amountText: item.amountMinor === null ? "" : minorToDecimal(Number(item.amountMinor)),
+            }))}
+          />
         </CardContent>
       </Card>
     </main>

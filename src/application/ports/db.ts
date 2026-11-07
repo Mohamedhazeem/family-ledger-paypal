@@ -117,6 +117,7 @@ export interface DisbursementRepository {
   create(_input: DisbursementInput): Promise<DisbursementRecord>;
   findById(_id: string): Promise<DisbursementRecord | null>;
   findByPublicReference(_publicReference: string): Promise<DisbursementRecord | null>;
+  updatePlanStatus(_id: string, _status: PlanStatus): Promise<DisbursementRecord>;
 }
 
 export type ActorType = "COORDINATOR" | "BENEFICIARY" | "SYSTEM";
@@ -128,6 +129,7 @@ export interface PlanVersionRecord {
   createdByType: ActorType;
   createdById: string | null;
   summary: string;
+  explanation: string | null;
   status: string;
   totalAllocatedMinor: bigint;
   unallocatedMinor: bigint;
@@ -141,6 +143,7 @@ export interface PlanVersionInput {
   createdByType: ActorType;
   createdById: string | null;
   summary: string;
+  explanation?: string | null;
   status: string;
   totalAllocatedMinor: bigint;
   unallocatedMinor: bigint;

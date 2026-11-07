@@ -12,6 +12,7 @@ Format: date, command, outcome, known limitation.
 - 2026-11-07 Slice 2.1 AI port + adapter — `npx vitest run src/infrastructure/ai/provider.test.ts`: 4/4 passed (builds from env, AI_BASE_URL change flips adapter baseURL, unknown provider throws, ping returns provider+model). `npx tsc --noEmit` 0, `npm run lint` 0 errors, `npm test` 8 files/33 tests passed, `npm run build` success (route `/api/ai/ping`). M check: `npm run start -p 3177`, `curl http://localhost:3177/api/ai/ping` → HTTP 200 `{"provider":"openai","model":"google/gemma-4-31b-it"}`.
 
 Known limitations:
+- Slice 3.4: PlanVersion.explanation column added (spec §9 says "model at least"); explanation is not yet surfaced in any UI (coordinator compare is 3.7). Double-suggest creates another version (no idempotency guard, same as 3.3).
 - Slice 3.3: double-accept mints another version (no idempotency guard yet); accept is allowed from any pre-acceptance state (DRAFT/INVITED/REVISION_PROPOSED treated alike). Suggestion/decline are 3.4/3.5.
 - Slice 3.2: no accept/revise actions and no language switcher yet (3.3–3.8). Rate limiting is in-memory (single instance); replace with a shared store if the app scales out. Rate-limited lookups return 404 (indistinguishable from invalid, to avoid enumeration).
 - Slice 3.1: invitation revocation/lookup/rate-limiting are 3.2/3.11; the repo port is create-only. An empty follow-up migration followed a first scripted migration that failed validation (missing back-relation) — no history rewritten.
