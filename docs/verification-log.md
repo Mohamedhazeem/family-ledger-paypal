@@ -12,7 +12,7 @@ Format: date, command, outcome, known limitation.
 - 2026-11-07 Slice 2.1 AI port + adapter — `npx vitest run src/infrastructure/ai/provider.test.ts`: 4/4 passed (builds from env, AI_BASE_URL change flips adapter baseURL, unknown provider throws, ping returns provider+model). `npx tsc --noEmit` 0, `npm run lint` 0 errors, `npm test` 8 files/33 tests passed, `npm run build` success (route `/api/ai/ping`). M check: `npm run start -p 3177`, `curl http://localhost:3177/api/ai/ping` → HTTP 200 `{"provider":"openai","model":"google/gemma-4-31b-it"}`.
 
 Known limitations:
-- Slice 3.9: append-only is enforced at the application layer (create-only port + delete/update absent); no DB-level trigger/rule guarding against direct SQL edits.
+- Slice 3.12: timeline labels are English only (EN/TA/HI dictionaries cover portal chrome; timeline labels are not yet in the dictionaries). Append-only is enforced at the application layer (create-only port + delete/update absent); no DB-level trigger/rule guarding against direct SQL edits.
 - Slice 3.8: the shared coordinator PlanItemsEditor's micro-labels (Category/Amount rows, Add/Delete controls) stay in English on the beneficiary suggest form — only portal chrome, consent, and action labels are localized. Static labels only (no AI translation, per NOT).
 - Slice 3.7: the detail page is reached by URL for now (no list-screen links yet); PayPal payout itself is a placeholder button (4.x). The page also shows plan version history + PayPal badge status (read-only).
 - Slice 3.6: the configured model takes ~60-120s to generate explanations (NIM); unchanged plans return the template instantly (no AI call). Category matching in diffPlans is trimmed + case-insensitive; duplicate category labels pair in order.

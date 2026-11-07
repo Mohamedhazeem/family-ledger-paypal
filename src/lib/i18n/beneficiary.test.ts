@@ -8,6 +8,7 @@ import { BENEFICIARY_STRINGS, localizeView } from "./beneficiary";
 import type { InvitationView } from "@/application/use-cases/get-invitation-view";
 
 const VIEW: InvitationView = {
+  disbursementId: "disbursement-1",
   programmeName: "Community Family Support Programme",
   beneficiaryDisplayName: "Priya Raman",
   beneficiaryLanguage: "en",

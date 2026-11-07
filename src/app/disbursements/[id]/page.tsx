@@ -5,6 +5,7 @@ import { prisma } from "@/infrastructure/db/prisma";
 import { getSession } from "@/lib/auth/session";
 import { formatMinor } from "@/domain/value-objects/money";
 import { diffPlans } from "@/domain/plan-diff";
+import { visibleTimeline } from "@/domain/timeline";
 import { formatStatusLabel, toneForStatus } from "@/app/dashboard/disbursement-formatting";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -65,6 +66,11 @@ export default async function DisbursementDetailPage({
     where: { disbursementId: id },
     orderBy: { createdAt: "desc" },
   });
+  const ledgerEvents = await prisma.ledgerEvent.findMany({
+    where: { disbursementId: id },
+    orderBy: { createdAt: "asc" },
+  });
+  const timeline = visibleTimeline(ledgerEvents, "coordinator");
 
   return (
     <div className="space-y-6">
@@ -219,6 +225,26 @@ export default async function DisbursementDetailPage({
                 );
               })}
             </ul>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="space-y-3 pt-5">
+          <h2 className="text-base font-semibold text-slate-900">Timeline</h2>
+          {timeline.length === 0 ? (
+            <p className="text-sm text-slate-500">No events yet.</p>
+          ) : (
+            <ol className="space-y-2">
+              {timeline.map((entry, index) => (
+                <li key={`${entry.eventType}-${index}`} className="flex items-baseline justify-between gap-3 text-sm">
+                  <span className="text-slate-700">{entry.label}</span>
+                  <time className="shrink-0 text-xs tabular-nums text-slate-400">
+                    {entry.createdAt.toLocaleString()}
+                  </time>
+                </li>
+              ))}
+            </ol>
           )}
         </CardContent>
       </Card>

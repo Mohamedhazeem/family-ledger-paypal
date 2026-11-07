@@ -31,6 +31,8 @@ export interface BeneficiaryStrings {
   acceptPlan: string;
   suggestChanges: string;
   declineToShare: string;
+  timeline: string;
+  noEventsYet: string;
   programmeSupportPlan: string;
 }
 
@@ -51,6 +53,8 @@ const EN: BeneficiaryStrings = {
   acceptPlan: "Accept this plan",
   suggestChanges: "Suggest changes",
   declineToShare: "I prefer not to share a plan",
+  timeline: "Timeline",
+  noEventsYet: "No events yet.",
   programmeSupportPlan: "has put together a support plan for you, below.",
 };
 
@@ -71,6 +75,8 @@ const TA: BeneficiaryStrings = {
   acceptPlan: "இந்தத் திட்டத்தை ஏற்கவும்",
   suggestChanges: "மாற்றங்களைப் பரிந்துரைக்கவும்",
   declineToShare: "நான் திட்டத்தைப் பகிர விரும்பவில்லை",
+  timeline: "காலவரிசை",
+  noEventsYet: "இன்னும் நிகழ்வுகள் இல்லை.",
   programmeSupportPlan: "உங்களுக்காக ஒரு ஆதரவுத் திட்டத்தைத் தயாரித்துள்ளது.",
 };
 
@@ -91,6 +97,8 @@ const HI: BeneficiaryStrings = {
   acceptPlan: "इस योजना को स्वीकार करें",
   suggestChanges: "परिवर्तन सुझाएँ",
   declineToShare: "मैं योजना साझा नहीं करना चाहता",
+  timeline: "समयरेखा",
+  noEventsYet: "अभी कोई घटना नहीं।",
   programmeSupportPlan: "ने आपके लिए एक सहायता योजना तैयार की है।",
 };
 

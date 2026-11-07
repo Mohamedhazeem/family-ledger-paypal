@@ -16,6 +16,7 @@ export interface InvitationViewItem {
 }
 
 export interface InvitationView {
+  disbursementId: string;
   programmeName: string;
   beneficiaryDisplayName: string;
   beneficiaryLanguage: "en" | "ta" | "hi";
@@ -87,6 +88,7 @@ export class GetInvitationView {
     });
 
     return {
+      disbursementId: disbursement.id,
       programmeName: organization?.name ?? "FamilyLedger",
       beneficiaryDisplayName: beneficiary?.displayName ?? "",
       beneficiaryLanguage: beneficiary?.preferredLanguage ?? "en",

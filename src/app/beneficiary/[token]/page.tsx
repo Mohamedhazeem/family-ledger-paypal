@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation";
 import { headers } from "next/headers";
+import { prisma } from "@/infrastructure/db/prisma";
+import { visibleTimeline } from "@/domain/timeline";
 import { formatMinor } from "@/domain/value-objects/money";
 import { GetInvitationView, InvitationNotFoundError } from "@/application/use-cases/get-invitation-view";
 import {
@@ -67,6 +69,13 @@ export default async function BeneficiaryPage({
   const { lang } = await searchParams;
   const activeLang = resolvePortalLang(view.beneficiaryLanguage, lang);
   const { strings } = localizeView(view, activeLang);
+  const timeline = visibleTimeline(
+    await prisma.ledgerEvent.findMany({
+      where: { disbursementId: view.disbursementId },
+      orderBy: { createdAt: "asc" },
+    }),
+    "beneficiary",
+  );
 
   return (
     <main className="mx-auto w-full max-w-xl space-y-6 px-4 py-10">
@@ -143,6 +152,26 @@ export default async function BeneficiaryPage({
             <AcceptPlanButton token={token} labels={{ accept: strings.acceptPlan }} />
             <DeclineToShareButton token={token} labels={{ decline: strings.declineToShare }} />
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="space-y-3 pt-5">
+          <h2 className="text-base font-semibold text-slate-900">{strings.timeline}</h2>
+          {timeline.length === 0 ? (
+            <p className="text-sm text-slate-600">{strings.noEventsYet}</p>
+          ) : (
+            <ol className="space-y-2">
+              {timeline.map((entry, index) => (
+                <li key={`${entry.eventType}-${index}`} className="flex items-baseline justify-between gap-3 text-sm">
+                  <span className="text-slate-700">{entry.label}</span>
+                  <time className="shrink-0 text-xs tabular-nums text-slate-400">
+                    {entry.createdAt.toLocaleString()}
+                  </time>
+                </li>
+              ))}
+            </ol>
+          )}
         </CardContent>
       </Card>
 
