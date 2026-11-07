@@ -111,7 +111,10 @@ export class SubmitPayout {
     // the transition to SUBMITTING. Losers get the winner's batch id
     // without another outbound call. Eligible on payment state alone
     // (spec §4.4); plan status never gates.
-    if (!canSubmitPayout(disbursement)) {
+    const latestTerminalFailed =
+      disbursement.paymentStatus === "FAILED" &&
+      (await this.attempts.findLatestByDisbursementId(disbursement.id))?.attemptState === "FAILED";
+    if (!canSubmitPayout(disbursement) && !latestTerminalFailed) {
       throw new PayoutNotSubmittableError(
         `Payout cannot be submitted while payment status is ${disbursement.paymentStatus}.`,
       );

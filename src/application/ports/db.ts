@@ -121,8 +121,10 @@ export interface DisbursementRepository {
   updatePaymentStatus(_id: string, _status: PaymentStatus): Promise<DisbursementRecord>;
   /**
    * Single-submission lock (spec §11): atomically flips the status to
-   * SUBMITTING only from NOT_SENT/READY. Returns true when this
-   * caller won the claim.
+   * SUBMITTING only from NOT_SENT/READY — or from FAILED, a terminal
+   * outcome whose DEFINITELY-rejected batch never existed at PayPal
+   * (a fresh attempt mints a new sender batch id). Returns true when
+   * this caller won the claim.
    */
   claimForSubmission(_id: string): Promise<boolean>;
   updatePayoutFields(

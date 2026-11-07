@@ -102,7 +102,7 @@ export class PrismaDisbursementRepository implements DisbursementRepository {
 
   async claimForSubmission(id: string): Promise<boolean> {
     const result = await prisma.disbursement.updateMany({
-      where: { id, paymentStatus: { in: ["NOT_SENT", "READY"] } },
+      where: { id, paymentStatus: { in: ["NOT_SENT", "READY", "FAILED"] } },
       data: { paymentStatus: "SUBMITTING" },
     });
     return result.count === 1;
