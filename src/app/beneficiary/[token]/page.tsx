@@ -31,7 +31,7 @@ import {
  * and revoked tokens are indistinguishable 404s. Rate-limited per
  * IP (ADR-0007). Canonical amounts/IDs are never translated.
  */
-const lookupLimit = new RateLimit({ max: 60, windowMs: 60_000 });
+const lookupLimit = new RateLimit({ max: 10, windowMs: 60_000 });
 
 const LANG_LABELS: Record<PortalLang, string> = { en: "English", ta: "தமிழ்", hi: "हिंदी" };
 
