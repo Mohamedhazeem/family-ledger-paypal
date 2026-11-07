@@ -156,7 +156,7 @@ npm run seed                # seed
 
 ## 16. Open Questions (do not guess — resolve via ADR)
 
-- PayPal Payouts access/scope availability for sandbox business (Day-0 gate, AG Grid sponsor / APIMatic plugin access/licensing).
+- PayPal Payouts sandbox access/scope: VERIFIED (real sandbox batch created and polled in slices 4.3/4.6; provider grants `https://uri.paypal.com/payments/payouts`). Remaining: APIMatic plugin access/licensing.
 - AG Studio embedded package + Studio Agent Framework licensing & aggregate view API surface.
 - Auth.js vs equivalent session solution final choice; cookie/CSRF specifics.
 - AI provider final selection & model; translation provider for en/ta/hi.
