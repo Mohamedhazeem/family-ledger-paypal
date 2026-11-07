@@ -1,9 +1,19 @@
-import type { ReactNode } from "react";
+import React from "react";
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import "./globals.css";
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+
+export const metadata: Metadata = {
+  title: "FamilyLedger 2.0",
+  description: "Consent-first, AI-assisted family-support disbursement platform.",
+};
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body>{children}</body>
+    <html lang="en" className={inter.variable}>
+      <body className="min-h-screen bg-white font-sans text-slate-900 antialiased">{children}</body>
     </html>
   );
 }
