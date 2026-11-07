@@ -15,6 +15,7 @@ export default async function DashboardPage() {
   const paid = rows.filter((r) => r.paymentStatus === "SUCCESS").length;
 
   const gridRows: DisbursementRow[] = rows.map((r) => ({
+    id: r.id,
     publicReference: r.publicReference,
     beneficiary: r.beneficiary.displayName,
     amountMinor: r.amountMinor.toString(),
