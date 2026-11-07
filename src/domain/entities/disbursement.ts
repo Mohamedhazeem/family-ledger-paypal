@@ -114,3 +114,16 @@ export function createDisbursement(input: CreateDisbursementInput, now: Date = n
     updatedAt: now,
   };
 }
+
+/**
+ * Whether a payout may be submitted (spec §4.4-§4.5, ADR-0004).
+ * Payment eligibility depends ONLY on payment state — beneficiary
+ * consent (planStatus) never gates the support payment.
+ */
+export function canSubmitPayout(
+  disbursement: Pick<Disbursement, "planStatus" | "paymentStatus">,
+): boolean {
+  return (
+    disbursement.paymentStatus === "NOT_SENT" || disbursement.paymentStatus === "READY"
+  );
+}

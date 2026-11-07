@@ -13,6 +13,7 @@ import {
 import { RateLimit } from "@/lib/security/rate-limit";
 import { Card, CardContent } from "@/components/ui/card";
 import { AcceptPlanButton } from "@/components/beneficiary/accept-plan-button";
+import { DeclineToShareButton } from "@/components/beneficiary/decline-to-share-button";
 import { SuggestChangesForm } from "@/components/beneficiary/suggest-changes-form";
 import { minorToDecimal } from "@/components/disbursements/money-client";
 
@@ -114,8 +115,9 @@ export default async function BeneficiaryPage({
             conditional on sharing. FamilyLedger never asks for receipts and does not track how
             you spend. If something in this plan does not work for you, tell your coordinator.
           </p>
-          <div className="mt-4">
+          <div className="mt-4 space-y-3">
             <AcceptPlanButton token={token} />
+            <DeclineToShareButton token={token} />
           </div>
         </CardContent>
       </Card>
