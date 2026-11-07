@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import { AllCommunityModule, ModuleRegistry, themeQuartz } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
-import { Check, Search, X } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { formatMinor } from "@/domain/value-objects/money";
 import {
   formatCreatedDate,
@@ -25,6 +25,10 @@ const theme = themeQuartz.withParams({
   headerFontFamily: "Inter, ui-sans-serif, system-ui, sans-serif",
   wrapperBorderRadius: 12,
 });
+
+// Custom header filter icon: horizontal sliders instead of the
+// default funnel, themed with currentColor so it follows the grid.
+const SLIDERS_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/><line x1="21" x2="16" y1="20" y2="20"/><line x1="12" x2="3" y1="20" y2="20"/><line x1="14" x2="14" y1="2" y2="6"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="16" x2="16" y1="18" y2="22"/></svg>`;
 
 export type DisbursementRow = {
   publicReference: string;
@@ -97,8 +101,10 @@ function ReferenceCell({ value }: { value: string }) {
   return (
     <button
       type="button"
-      title="Copy reference"
-      className="group inline-flex items-center gap-1.5 font-mono text-[13px] text-slate-600 transition-colors hover:text-indigo-600"
+      title={copied ? "Copied" : "Copy reference"}
+      className={`font-mono text-[13px] transition-colors hover:text-indigo-600 ${
+        copied ? "text-emerald-600" : "text-slate-600"
+      }`}
       onClick={async () => {
         await navigator.clipboard.writeText(value);
         setCopied(true);
@@ -106,9 +112,6 @@ function ReferenceCell({ value }: { value: string }) {
       }}
     >
       {value}
-      <span className="text-emerald-600 opacity-0 transition-opacity group-hover:opacity-100">
-        {copied ? <Check className="h-3.5 w-3.5" /> : <span className="text-[11px]">copy</span>}
-      </span>
     </button>
   );
 }
@@ -126,6 +129,7 @@ export function DisbursementGrid({ rows }: { rows: DisbursementRow[] }) {
       flex: 1.1,
       minWidth: 140,
       cellRenderer: (p: any) => <ReferenceCell value={p.value} />,
+      cellClass: "ag-register-center",
     },
     {
       field: "beneficiary",
@@ -133,6 +137,7 @@ export function DisbursementGrid({ rows }: { rows: DisbursementRow[] }) {
       flex: 1.2,
       minWidth: 160,
       cellRenderer: (p: any) => <BeneficiaryCell value={p.value} />,
+      cellClass: "ag-register-center",
     },
     {
       field: "amountMinor",
@@ -141,8 +146,7 @@ export function DisbursementGrid({ rows }: { rows: DisbursementRow[] }) {
       sortable: true,
       valueGetter: (p: any) => BigInt(p.data.amountMinor),
       valueFormatter: (p: any) => `$${formatMinor(BigInt(p.value))}`,
-      cellClass: "text-right font-semibold tabular-nums text-slate-900",
-      headerClass: "text-right",
+      cellClass: "ag-register-center font-semibold tabular-nums text-slate-900",
     },
     {
       field: "planStatus",
@@ -151,6 +155,7 @@ export function DisbursementGrid({ rows }: { rows: DisbursementRow[] }) {
       minWidth: 150,
       filter: true,
       cellRenderer: (p: any) => <StatusPill status={p.value} />,
+      cellClass: "ag-register-center",
     },
     {
       field: "paypalBatchStatus",
@@ -158,6 +163,7 @@ export function DisbursementGrid({ rows }: { rows: DisbursementRow[] }) {
       flex: 0.9,
       minWidth: 130,
       cellRenderer: (p: any) => <StatusPill status={p.value} />,
+      cellClass: "ag-register-center",
     },
     {
       field: "paypalItemStatus",
@@ -165,13 +171,14 @@ export function DisbursementGrid({ rows }: { rows: DisbursementRow[] }) {
       flex: 0.9,
       minWidth: 130,
       cellRenderer: (p: any) => <StatusPill status={p.value} />,
+      cellClass: "ag-register-center",
     },
     {
       field: "createdAt",
       headerName: "Created",
       minWidth: 120,
       valueFormatter: (p: any) => formatCreatedDate(p.value),
-      cellClass: "text-slate-500",
+      cellClass: "ag-register-center text-slate-500",
     },
   ];
 
@@ -214,6 +221,7 @@ export function DisbursementGrid({ rows }: { rows: DisbursementRow[] }) {
       <div className="overflow-hidden rounded-xl border border-slate-200" style={{ height: 520 }}>
         <AgGridReact
           theme={theme}
+          icons={{ filter: SLIDERS_ICON }}
           rowData={rows}
           columnDefs={columnDefs}
           onGridReady={(e) => {

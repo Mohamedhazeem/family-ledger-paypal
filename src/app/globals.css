@@ -11,3 +11,18 @@
 html {
   scroll-behavior: smooth;
 }
+
+/* Disbursement register: center header titles with the filter
+   icon grouped next to the title (little gap) instead of pinned
+   to the cell edge. */
+.ag-header-cell .ag-cell-label-container {
+  justify-content: center;
+  gap: 8px;
+}
+.ag-header-cell .ag-header-cell-label {
+  flex: none;
+  justify-content: center;
+}
+.ag-register-center {
+  text-align: center;
+}
