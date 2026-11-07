@@ -66,6 +66,20 @@ describe("OpenAiAdapter.parseIntent schema validation (Slice 2.3)", () => {
     expect(plan.items[0]!.amountText).toBe("300.00");
   });
 
+  it("accepts fenced JSON from the model", async () => {
+    server.use(
+      http.post(`${BASE_URL}/chat/completions`, () =>
+        completionResponse("```json\n" + VALID_PLAN_JSON + "\n```"),
+      ),
+    );
+    const plan = await adapter().parseIntent({
+      note: "$300 for rent",
+      amountMinor: 50000n,
+      currency: "USD",
+    });
+    expect(plan.items[0]!.category).toBe("Rent");
+  });
+
   it("rejects model output that fails schema validation", async () => {
     server.use(
       http.post(
