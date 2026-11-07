@@ -12,6 +12,9 @@ import type {
   OrganizationInput,
   OrganizationRecord,
   OrganizationRepository,
+  PayoutAttemptInput,
+  PayoutAttemptRecord,
+  PayoutAttemptRepository,
   PlanItemInput,
   PlanItemRecord,
   PlanVersionInput,
@@ -30,6 +33,7 @@ import {
   disbursementInputSchema,
   ledgerEventInputSchema,
   organizationInputSchema,
+  payoutAttemptInputSchema,
   planItemInputSchema,
   planVersionInputSchema,
   recipientInvitationInputSchema,
@@ -91,6 +95,10 @@ export class PrismaDisbursementRepository implements DisbursementRepository {
   async updatePlanStatus(id: string, status: DisbursementRecord["planStatus"]): Promise<DisbursementRecord> {
     return prisma.disbursement.update({ where: { id }, data: { planStatus: status } });
   }
+
+  async updatePaymentStatus(id: string, status: DisbursementRecord["paymentStatus"]): Promise<DisbursementRecord> {
+    return prisma.disbursement.update({ where: { id }, data: { paymentStatus: status } });
+  }
 }
 
 /** Immutable plan snapshots: create-only port, no update/delete (spec §9). */
@@ -130,6 +138,29 @@ export class PrismaLedgerEventRepository implements LedgerEventRepository {
   async create(input: LedgerEventInput): Promise<LedgerEventRecord> {
     const data = ledgerEventInputSchema.parse(input);
     return prisma.ledgerEvent.create({ data });
+  }
+}
+
+/**
+ * Payout attempts (Slice 4.2, spec §9/§11). sender_batch_id is
+ * persisted before any outbound call; unique constraints make a
+ * duplicate insert fail.
+ */
+export class PrismaPayoutAttemptRepository implements PayoutAttemptRepository {
+  async create(input: PayoutAttemptInput): Promise<PayoutAttemptRecord> {
+    const data = payoutAttemptInputSchema.parse(input);
+    return prisma.payoutAttempt.create({ data });
+  }
+
+  async findBySenderBatchId(senderBatchId: string): Promise<PayoutAttemptRecord | null> {
+    return prisma.payoutAttempt.findUnique({ where: { senderBatchId } });
+  }
+
+  async findLatestByDisbursementId(disbursementId: string): Promise<PayoutAttemptRecord | null> {
+    return prisma.payoutAttempt.findFirst({
+      where: { disbursementId },
+      orderBy: { createdAt: "desc" },
+    });
   }
 }
 

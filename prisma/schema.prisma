@@ -128,6 +128,7 @@ model Disbursement {
   planVersions                    PlanVersion[]
   ledgerEvents                    LedgerEvent[]
   recipientInvitations            RecipientInvitation[]
+  payoutAttempts                  PayoutAttempt[]
   createdAt                       DateTime      @default(now())
   updatedAt                       DateTime      @updatedAt
 
@@ -175,12 +176,40 @@ model PlanItem {
 model LedgerEvent {
   id             String       @id @default(cuid())
   disbursementId String
-  disbursement   Disbursement @relation(fields: [disbursementId], references: [id], onDelete: Restrict)
+  disbursement        Disbursement @relation(fields: [disbursementId], references: [id], onDelete: Restrict)
   actorType      ActorType
   actorId        String?
   eventType      String
   payloadJson    String       @db.Text
   createdAt      DateTime     @default(now())
+
+  @@index([disbursementId])
+}
+
+// Slice 4.2 — one row per payout submission attempt. sender_batch_id is
+// persisted before any PayPal call; the unique constraints prevent
+// duplicate submissions with the same batch id.
+enum AttemptState {
+  CREATED
+  SUBMITTING
+  ACKNOWLEDGED
+  UNKNOWN
+  FAILED
+  RESOLVED
+}
+
+model PayoutAttempt {
+  id                       String       @id @default(cuid())
+  disbursementId           String
+  disbursement             Disbursement @relation(fields: [disbursementId], references: [id], onDelete: Restrict)
+  senderBatchId            String       @unique
+  senderItemId             String       @unique
+  paypalPayoutBatchId      String?
+  attemptState             AttemptState @default(SUBMITTING)
+  requestPayloadRedacted   String       @db.Text
+  responsePayloadRedacted  String?      @db.Text
+  createdAt                DateTime     @default(now())
+  updatedAt                DateTime     @default(now()) @updatedAt
 
   @@index([disbursementId])
 }

@@ -118,6 +118,7 @@ export interface DisbursementRepository {
   findById(_id: string): Promise<DisbursementRecord | null>;
   findByPublicReference(_publicReference: string): Promise<DisbursementRecord | null>;
   updatePlanStatus(_id: string, _status: PlanStatus): Promise<DisbursementRecord>;
+  updatePaymentStatus(_id: string, _status: PaymentStatus): Promise<DisbursementRecord>;
 }
 
 export type ActorType = "COORDINATOR" | "BENEFICIARY" | "SYSTEM";
@@ -201,6 +202,47 @@ export interface LedgerEventInput {
 /** Append-only: create only (spec §9). */
 export interface LedgerEventRepository {
   create(_input: LedgerEventInput): Promise<LedgerEventRecord>;
+}
+
+export type AttemptState =
+  | "CREATED"
+  | "SUBMITTING"
+  | "ACKNOWLEDGED"
+  | "UNKNOWN"
+  | "FAILED"
+  | "RESOLVED";
+
+export interface PayoutAttemptRecord {
+  id: string;
+  disbursementId: string;
+  senderBatchId: string;
+  senderItemId: string;
+  paypalPayoutBatchId: string | null;
+  attemptState: AttemptState;
+  requestPayloadRedacted: string;
+  responsePayloadRedacted: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface PayoutAttemptInput {
+  disbursementId: string;
+  senderBatchId: string;
+  senderItemId: string;
+  paypalPayoutBatchId: string | null;
+  attemptState: AttemptState;
+  requestPayloadRedacted: string;
+}
+
+/**
+ * One row per payout submission attempt (spec §9, §11).
+ * senderBatchId/senderItemId carry unique constraints in the DB so
+ * duplicate submissions cannot slip through.
+ */
+export interface PayoutAttemptRepository {
+  create(_input: PayoutAttemptInput): Promise<PayoutAttemptRecord>;
+  findBySenderBatchId(_senderBatchId: string): Promise<PayoutAttemptRecord | null>;
+  findLatestByDisbursementId(_disbursementId: string): Promise<PayoutAttemptRecord | null>;
 }
 
 export interface RecipientInvitationRecord {

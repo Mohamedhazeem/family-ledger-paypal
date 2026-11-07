@@ -108,3 +108,12 @@ export const recipientInvitationInputSchema = z.object({
   tokenHash: z.string().min(1),
   expiresAt: z.date(),
 });
+
+export const payoutAttemptInputSchema = z.object({
+  disbursementId: z.string().min(1),
+  senderBatchId: z.string().min(1),
+  senderItemId: z.string().min(1),
+  paypalPayoutBatchId: z.string().min(1).nullable(),
+  attemptState: z.enum(["CREATED", "SUBMITTING", "ACKNOWLEDGED", "UNKNOWN", "FAILED", "RESOLVED"]),
+  requestPayloadRedacted: z.string().min(1),
+});
