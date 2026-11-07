@@ -61,7 +61,7 @@ describe("ExplainPlanDiff (Slice 3.6)", () => {
       { items: [{ category: "Food", amountMinor: 7500n }] },
     );
     const result = await useCase.execute(diff);
-    expect(result.explanation).toContain("+25.00");
+    expect(result.explanation).toContain("+$25.00");
     expect(result.source).toBe("template");
   });
 });

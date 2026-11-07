@@ -12,6 +12,7 @@ Format: date, command, outcome, known limitation.
 - 2026-11-07 Slice 2.1 AI port + adapter — `npx vitest run src/infrastructure/ai/provider.test.ts`: 4/4 passed (builds from env, AI_BASE_URL change flips adapter baseURL, unknown provider throws, ping returns provider+model). `npx tsc --noEmit` 0, `npm run lint` 0 errors, `npm test` 8 files/33 tests passed, `npm run build` success (route `/api/ai/ping`). M check: `npm run start -p 3177`, `curl http://localhost:3177/api/ai/ping` → HTTP 200 `{"provider":"openai","model":"google/gemma-4-31b-it"}`.
 
 Known limitations:
+- Slice 3.7: the detail page is reached by URL for now (no list-screen links yet); PayPal payout itself is a placeholder button (4.x). The page also shows plan version history + PayPal badge status (read-only).
 - Slice 3.6: the configured model takes ~60-120s to generate explanations (NIM); unchanged plans return the template instantly (no AI call). Category matching in diffPlans is trimmed + case-insensitive; duplicate category labels pair in order.
 - Slice 3.5: double-decline/double-suggest create more versions (no idempotency guard, same as 3.3). Token resolution is duplicated across the four beneficiary use cases — a shared resolver is a follow-up refactor.
 - Slice 3.4: PlanVersion.explanation column added (spec §9 says "model at least"); explanation is not yet surfaced in any UI (coordinator compare is 3.7). Double-suggest creates another version (no idempotency guard, same as 3.3).

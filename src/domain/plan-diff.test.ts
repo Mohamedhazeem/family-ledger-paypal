@@ -19,12 +19,12 @@ describe("diffPlans (Slice 3.6)", () => {
       ]),
     );
     expect(diff.added).toEqual([
-      { category: "Medicine", amountMinor: 5000n, deltaMinor: 5000n },
+      { category: "Medicine", v1AmountMinor: null, v2AmountMinor: 5000n, deltaMinor: 5000n },
     ]);
     expect(diff.removed).toEqual([]);
     expect(diff.changed).toEqual([]);
     expect(diff.unchanged).toEqual([
-      { category: "Rent", amountMinor: 30000n, deltaMinor: 0n },
+      { category: "Rent", v1AmountMinor: 30000n, v2AmountMinor: 30000n, deltaMinor: 0n },
     ]);
   });
 
@@ -37,7 +37,7 @@ describe("diffPlans (Slice 3.6)", () => {
       v([{ category: "Rent", amountMinor: 30000n }]),
     );
     expect(diff.removed).toEqual([
-      { category: "Food", amountMinor: 15000n, deltaMinor: -15000n },
+      { category: "Food", v1AmountMinor: 15000n, v2AmountMinor: null, deltaMinor: -15000n },
     ]);
   });
 
