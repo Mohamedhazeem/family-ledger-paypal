@@ -16,18 +16,29 @@ import { AcceptPlanButton } from "@/components/beneficiary/accept-plan-button";
 import { DeclineToShareButton } from "@/components/beneficiary/decline-to-share-button";
 import { SuggestChangesForm } from "@/components/beneficiary/suggest-changes-form";
 import { minorToDecimal } from "@/components/disbursements/money-client";
+import {
+  PORTAL_LANGS,
+  localizeView,
+  resolvePortalLang,
+  type PortalLang,
+} from "@/lib/i18n/beneficiary";
 
 /**
- * GET /beneficiary/[token] (Slice 3.2, spec §14F, §13): public,
- * mobile-first, read-only plan view. Unknown, expired, and revoked
- * tokens are indistinguishable 404s. Rate-limited per IP (ADR-0007).
+ * GET /beneficiary/[token] (Slice 3.2, spec §14F, §13; localized by
+ * 3.8): public, mobile-first, read-only plan view. Unknown, expired,
+ * and revoked tokens are indistinguishable 404s. Rate-limited per
+ * IP (ADR-0007). Canonical amounts/IDs are never translated.
  */
 const lookupLimit = new RateLimit({ max: 60, windowMs: 60_000 });
 
+const LANG_LABELS: Record<PortalLang, string> = { en: "English", ta: "தமிழ்", hi: "हिंदी" };
+
 export default async function BeneficiaryPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ token: string }>;
+  searchParams: Promise<{ lang?: string }>;
 }) {
   const { token } = await params;
   const requestHeaders = await headers();
@@ -53,21 +64,41 @@ export default async function BeneficiaryPage({
     throw error;
   }
 
+  const { lang } = await searchParams;
+  const activeLang = resolvePortalLang(view.beneficiaryLanguage, lang);
+  const { strings } = localizeView(view, activeLang);
+
   return (
     <main className="mx-auto w-full max-w-xl space-y-6 px-4 py-10">
+      <nav className="flex items-center justify-end gap-1 text-sm" aria-label="Language">
+        {PORTAL_LANGS.map((l) => (
+          <a
+            key={l}
+            href={`?lang=${l}`}
+            className={`rounded-full px-2.5 py-1 transition ${
+              l === activeLang
+                ? "bg-indigo-600 font-medium text-white"
+                : "text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+            }`}
+          >
+            {LANG_LABELS[l]}
+          </a>
+        ))}
+      </nav>
       <header className="space-y-2">
         <p className="text-sm font-medium text-indigo-600">{view.programmeName}</p>
         <h1 className="text-2xl font-bold text-slate-900">
-          Hello{view.beneficiaryDisplayName ? `, ${view.beneficiaryDisplayName}` : ""} — your support plan
+          {strings.greeting}
+          {view.beneficiaryDisplayName ? `, ${view.beneficiaryDisplayName}` : ""} — {strings.yourSupportPlan}
         </h1>
         <p className="text-sm text-slate-600">
-          {view.programmeName} has put together a support plan for you, below.
+          {view.programmeName} {strings.programmeSupportPlan}
         </p>
       </header>
 
       <Card>
         <CardContent className="pt-5">
-          <p className="text-sm text-slate-500">Total support amount</p>
+          <p className="text-sm text-slate-500">{strings.totalSupportAmount}</p>
           <p className="mt-1 text-4xl font-bold tabular-nums text-slate-900">
             ${formatMinor(view.amountMinor)} {view.currency}
           </p>
@@ -76,19 +107,16 @@ export default async function BeneficiaryPage({
 
       <Card>
         <CardContent className="space-y-3 pt-5">
-          <h2 className="text-base font-semibold text-slate-900">Proposed plan</h2>
+          <h2 className="text-base font-semibold text-slate-900">{strings.proposedPlan}</h2>
           {view.items.length === 0 ? (
-            <p className="text-sm text-slate-600">
-              Your coordinator has not added any categories yet. Your full support amount remains
-              flexible.
-            </p>
+            <p className="text-sm text-slate-600">{strings.noCategoriesYet}</p>
           ) : (
             <ul className="divide-y divide-slate-100">
               {view.items.map((item, index) => (
                 <li key={index} className="flex items-center justify-between py-2.5">
                   <span className="text-sm font-medium text-slate-800">{item.category}</span>
                   <span className="text-sm font-semibold tabular-nums text-slate-900">
-                    {item.amountMinor === null ? "Flexible" : `$${formatMinor(item.amountMinor)}`}
+                    {item.amountMinor === null ? strings.flexible : `$${formatMinor(item.amountMinor)}`}
                   </span>
                 </li>
               ))}
@@ -100,7 +128,7 @@ export default async function BeneficiaryPage({
       {view.supportNote ? (
         <Card>
           <CardContent className="pt-5">
-            <h2 className="text-base font-semibold text-slate-900">From your coordinator</h2>
+            <h2 className="text-base font-semibold text-slate-900">{strings.fromYourCoordinator}</h2>
             <p className="mt-2 text-sm leading-6 text-slate-600">{view.supportNote}</p>
           </CardContent>
         </Card>
@@ -108,30 +136,23 @@ export default async function BeneficiaryPage({
 
       <Card>
         <CardContent className="pt-5">
-          <h2 className="text-base font-semibold text-slate-900">Your choice</h2>
-          <p className="mt-2 text-sm leading-6 text-slate-600">
-            This is a voluntary support plan. It does not restrict how you use money you receive.
-            You can choose to share an allocation plan or not — your support payment is not
-            conditional on sharing. FamilyLedger never asks for receipts and does not track how
-            you spend. If something in this plan does not work for you, tell your coordinator.
-          </p>
+          <h2 className="text-base font-semibold text-slate-900">{strings.yourChoice}</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-600">{strings.consentStatement}</p>
+          <p className="mt-2 text-sm leading-6 text-slate-600">{strings.privacyStatement}</p>
           <div className="mt-4 space-y-3">
-            <AcceptPlanButton token={token} />
-            <DeclineToShareButton token={token} />
+            <AcceptPlanButton token={token} labels={{ accept: strings.acceptPlan }} />
+            <DeclineToShareButton token={token} labels={{ decline: strings.declineToShare }} />
           </div>
         </CardContent>
       </Card>
 
       <Card>
         <CardContent className="space-y-4 pt-5">
-          <h2 className="text-base font-semibold text-slate-900">Suggest changes</h2>
-          <p className="text-sm leading-6 text-slate-600">
-            Need different categories or amounts? Update the plan below and send your suggestions —
-            your coordinator reviews them with you. Nothing changes until they agree.
-          </p>
+          <h2 className="text-base font-semibold text-slate-900">{strings.suggestChanges}</h2>
           <SuggestChangesForm
             token={token}
             totalMinor={Number(view.amountMinor)}
+            submitLabel={strings.suggestChanges}
             initialItems={view.items.map((item) => ({
               category: item.category,
               amountText: item.amountMinor === null ? "" : minorToDecimal(Number(item.amountMinor)),

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
  * AcceptPlanButton (Slice 3.3): submits the beneficiary's acceptance
  * with the invitation token and swaps to a confirmation on success.
  */
-export function AcceptPlanButton({ token }: { token: string }) {
+export function AcceptPlanButton({ token, labels }: { token: string; labels: { accept: string } }) {
   const [state, setState] = useState<"idle" | "sending" | "done" | "error">("idle");
 
   async function accept() {
@@ -32,7 +32,7 @@ export function AcceptPlanButton({ token }: { token: string }) {
   return (
     <div className="space-y-2">
       <Button onClick={accept} disabled={state === "sending"} className="w-full">
-        {state === "sending" ? "Recording…" : "Accept this plan"}
+        {state === "sending" ? "Recording…" : labels.accept}
       </Button>
       {state === "error" ? (
         <p className="text-sm text-rose-600">

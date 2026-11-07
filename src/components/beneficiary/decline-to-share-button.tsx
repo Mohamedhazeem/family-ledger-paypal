@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
  * DeclineToShareButton (Slice 3.5): records the beneficiary's choice
  * not to share an allocation plan. Payment is unaffected (spec §4.5).
  */
-export function DeclineToShareButton({ token }: { token: string }) {
+export function DeclineToShareButton({ token, labels }: { token: string; labels: { decline: string } }) {
   const [state, setState] = useState<"idle" | "sending" | "done" | "error">("idle");
 
   async function decline() {
@@ -38,7 +38,7 @@ export function DeclineToShareButton({ token }: { token: string }) {
         disabled={state === "sending"}
         className="w-full"
       >
-        {state === "sending" ? "Recording…" : "I prefer not to share a plan"}
+        {state === "sending" ? "Recording…" : labels.decline}
       </Button>
       {state === "error" ? (
         <p className="text-sm text-rose-600">

@@ -18,6 +18,7 @@ export interface InvitationViewItem {
 export interface InvitationView {
   programmeName: string;
   beneficiaryDisplayName: string;
+  beneficiaryLanguage: "en" | "ta" | "hi";
   amountMinor: bigint;
   currency: string;
   items: InvitationViewItem[];
@@ -88,6 +89,7 @@ export class GetInvitationView {
     return {
       programmeName: organization?.name ?? "FamilyLedger",
       beneficiaryDisplayName: beneficiary?.displayName ?? "",
+      beneficiaryLanguage: beneficiary?.preferredLanguage ?? "en",
       amountMinor: disbursement.amountMinor,
       currency: disbursement.currency,
       items: items.map((item) => ({ category: item.category, amountMinor: item.amountMinor })),

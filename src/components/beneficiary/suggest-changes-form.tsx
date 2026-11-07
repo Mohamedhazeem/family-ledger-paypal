@@ -15,10 +15,12 @@ export function SuggestChangesForm({
   token,
   initialItems,
   totalMinor,
+  submitLabel,
 }: {
   token: string;
   initialItems: PlanItemDraft[];
   totalMinor: number;
+  submitLabel: string;
 }) {
   const [items, setItems] = useState<PlanItemDraft[]>(initialItems);
   const [explanation, setExplanation] = useState("");
@@ -78,7 +80,7 @@ export function SuggestChangesForm({
         />
       </label>
       <Button onClick={submit} disabled={!canSubmit || state === "sending"} className="w-full">
-        {state === "sending" ? "Sending…" : "Suggest changes"}
+        {state === "sending" ? "Sending…" : submitLabel}
       </Button>
       {state === "error" ? (
         <p className="text-sm text-rose-600">
