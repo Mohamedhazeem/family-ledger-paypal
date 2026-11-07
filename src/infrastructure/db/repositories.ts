@@ -6,9 +6,17 @@ import type {
   DisbursementInput,
   DisbursementRecord,
   DisbursementRepository,
+  LedgerEventInput,
+  LedgerEventRecord,
+  LedgerEventRepository,
   OrganizationInput,
   OrganizationRecord,
   OrganizationRepository,
+  PlanItemInput,
+  PlanItemRecord,
+  PlanVersionInput,
+  PlanVersionRecord,
+  PlanVersionRepository,
   UserInput,
   UserRecord,
   UserRepository,
@@ -17,7 +25,10 @@ import { prisma } from "@/infrastructure/db/prisma";
 import {
   beneficiaryInputSchema,
   disbursementInputSchema,
+  ledgerEventInputSchema,
   organizationInputSchema,
+  planItemInputSchema,
+  planVersionInputSchema,
   userInputSchema,
 } from "@/infrastructure/db/schemas";
 
@@ -71,5 +82,31 @@ export class PrismaDisbursementRepository implements DisbursementRepository {
 
   async findByPublicReference(publicReference: string): Promise<DisbursementRecord | null> {
     return prisma.disbursement.findUnique({ where: { publicReference } });
+  }
+}
+
+/** Immutable plan snapshots: create-only port, no update/delete (spec §9). */
+export class PrismaPlanVersionRepository implements PlanVersionRepository {
+  async create(input: PlanVersionInput): Promise<PlanVersionRecord> {
+    const data = planVersionInputSchema.parse(input);
+    return prisma.planVersion.create({ data });
+  }
+
+  async createItems(inputs: PlanItemInput[]): Promise<PlanItemRecord[]> {
+    const data = inputs.map((input) => planItemInputSchema.parse(input));
+    if (data.length === 0) return [];
+    await prisma.planItem.createMany({ data });
+    return prisma.planItem.findMany({
+      where: { planVersionId: data[0]!.planVersionId },
+      orderBy: { sortOrder: "asc" },
+    });
+  }
+}
+
+/** Append-only ledger (spec §9): create-only port. */
+export class PrismaLedgerEventRepository implements LedgerEventRepository {
+  async create(input: LedgerEventInput): Promise<LedgerEventRecord> {
+    const data = ledgerEventInputSchema.parse(input);
+    return prisma.ledgerEvent.create({ data });
   }
 }

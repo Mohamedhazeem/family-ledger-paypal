@@ -30,10 +30,13 @@ afterAll(async () => {
 
 describe("Slice 1.4 seed idempotency (spec §16)", () => {
   it("seeded scenario exists with the expected counts and amount", async () => {
-    const orgs = await prisma.organization.count();
-    const users = await prisma.user.count();
-    const bens = await prisma.beneficiary.count();
-    const disbs = await prisma.disbursement.count();
+    // Scoped to the seed scenario's stable keys: later E2E flows create
+    // additional rows in the shared dev DB, so global totals are not a
+    // valid assertion of the seed state.
+    const orgs = await prisma.organization.count({ where: { id: "seed-org-cfsp" } });
+    const users = await prisma.user.count({ where: { email: "alex.morgan@example.com" } });
+    const bens = await prisma.beneficiary.count({ where: { id: "seed-beneficiary-maria-santos" } });
+    const disbs = await prisma.disbursement.count({ where: { publicReference: "FL-SEED-001" } });
     expect(orgs).toBe(1);
     expect(users).toBe(1);
     expect(bens).toBe(1);

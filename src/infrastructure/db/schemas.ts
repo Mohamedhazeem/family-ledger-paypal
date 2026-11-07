@@ -72,3 +72,32 @@ export type OrganizationInputParsed = z.infer<typeof organizationInputSchema>;
 export type UserInputParsed = z.infer<typeof userInputSchema>;
 export type BeneficiaryInputParsed = z.infer<typeof beneficiaryInputSchema>;
 export type DisbursementInputParsed = z.infer<typeof disbursementInputSchema>;
+
+export const planVersionInputSchema = z.object({
+  disbursementId: z.string().min(1),
+  versionNumber: z.number().int().positive(),
+  createdByType: z.enum(["COORDINATOR", "BENEFICIARY", "SYSTEM"]),
+  createdById: z.string().min(1).nullable(),
+  summary: z.string(),
+  status: z.string().min(1),
+  totalAllocatedMinor: z.bigint().nonnegative(),
+  unallocatedMinor: z.bigint().nonnegative(),
+  requiresClarification: z.boolean(),
+});
+
+export const planItemInputSchema = z.object({
+  planVersionId: z.string().min(1),
+  category: z.string().trim().min(1),
+  description: z.string().nullable().optional(),
+  amountMinor: z.bigint().nonnegative().nullable().optional(),
+  sourceText: z.string().nullable().optional(),
+  sortOrder: z.number().int().nonnegative(),
+});
+
+export const ledgerEventInputSchema = z.object({
+  disbursementId: z.string().min(1),
+  actorType: z.enum(["COORDINATOR", "BENEFICIARY", "SYSTEM"]),
+  actorId: z.string().min(1).nullable(),
+  eventType: z.string().trim().min(1),
+  payloadJson: z.string().min(1),
+});

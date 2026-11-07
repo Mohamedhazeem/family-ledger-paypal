@@ -55,6 +55,12 @@ enum PaymentMode {
   MOCK
 }
 
+enum ActorType {
+  COORDINATOR
+  BENEFICIARY
+  SYSTEM
+}
+
 model Organization {
   id            String         @id @default(cuid())
   name          String
@@ -119,6 +125,8 @@ model Disbursement {
   paypalBatchStatus               String?
   paypalItemStatus                String?
   paymentMode                     PaymentMode   @default(SANDBOX)
+  planVersions                    PlanVersion[]
+  ledgerEvents                    LedgerEvent[]
   createdAt                       DateTime      @default(now())
   updatedAt                       DateTime      @updatedAt
 
@@ -126,6 +134,53 @@ model Disbursement {
   @@index([organizationId, createdAt])
   @@index([organizationId, paymentStatus])
   @@index([organizationId, planStatus])
+}
+
+// Slice 2.7 — PlanVersion is an immutable snapshot (no updatedAt).
+model PlanVersion {
+  id                  String       @id @default(cuid())
+  disbursementId      String
+  disbursement        Disbursement @relation(fields: [disbursementId], references: [id], onDelete: Restrict)
+  versionNumber       Int
+  createdByType       ActorType
+  createdById         String?
+  summary             String
+  status              String       @default("DRAFT")
+  totalAllocatedMinor BigInt
+  unallocatedMinor    BigInt
+  requiresClarification Boolean    @default(false)
+  items               PlanItem[]
+  createdAt           DateTime     @default(now())
+
+  @@unique([disbursementId, versionNumber])
+  @@index([disbursementId])
+}
+
+model PlanItem {
+  id            String      @id @default(cuid())
+  planVersionId String
+  planVersion   PlanVersion @relation(fields: [planVersionId], references: [id], onDelete: Restrict)
+  category      String
+  description   String?
+  amountMinor   BigInt?
+  sourceText    String?
+  sortOrder     Int         @default(0)
+
+  @@index([planVersionId])
+}
+
+// Append-only from application code (spec §9). No update/delete API.
+model LedgerEvent {
+  id             String       @id @default(cuid())
+  disbursementId String
+  disbursement   Disbursement @relation(fields: [disbursementId], references: [id], onDelete: Restrict)
+  actorType      ActorType
+  actorId        String?
+  eventType      String
+  payloadJson    String       @db.Text
+  createdAt      DateTime     @default(now())
+
+  @@index([disbursementId])
 }
 
 model Session {
