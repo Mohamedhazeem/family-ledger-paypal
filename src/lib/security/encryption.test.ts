@@ -27,4 +27,18 @@ describe("encryptField/decryptField", () => {
   it("rejects a key that is not 32 bytes of hex", () => {
     expect(() => encryptField("x@example.com", "short")).toThrow(/APP_ENCRYPTION_KEY/);
   });
+
+  it("fails to decrypt with the wrong key", () => {
+    const ciphertext = encryptField("beneficiary@example.com", KEY);
+    expect(() => decryptField(ciphertext, "b".repeat(64))).toThrow();
+  });
+
+  it("fails on tampered ciphertext (GCM auth tag)", () => {
+    const ciphertext = encryptField("beneficiary@example.com", KEY);
+    const [iv, tag, data] = ciphertext.split(":");
+    const tamperedData = Buffer.from(data!, "base64");
+    tamperedData[0] = tamperedData[0]! ^ 0xff;
+    const tampered = [iv, tag, tamperedData.toString("base64")].join(":");
+    expect(() => decryptField(tampered, KEY)).toThrow();
+  });
 });
