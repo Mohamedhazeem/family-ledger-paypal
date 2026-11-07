@@ -121,6 +121,13 @@ export class CreateDisbursement {
       paymentStatus: "NOT_SENT",
       paymentMode: "SANDBOX",
     });
+    await this.ledger.create({
+      disbursementId: disbursement.id,
+      actorType: "COORDINATOR",
+      actorId: input.coordinatorId,
+      eventType: "DISBURSEMENT_CREATED",
+      payloadJson: JSON.stringify({ publicReference: disbursement.publicReference }),
+    });
 
     if (input.plan) {
       const unallocatedMinor = totalMinor - totalAllocated;
