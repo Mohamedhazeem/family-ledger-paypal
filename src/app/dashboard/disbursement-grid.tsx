@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { AllCommunityModule, ModuleRegistry, themeQuartz } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
 import { Search, X } from "lucide-react";
@@ -109,10 +110,42 @@ function ReferenceCell({ value, id }: { value: string; id: string }) {
   );
 }
 
+/** Mirrors AG Grid's single-column sort model for our client-side sort. */
+interface SortState {
+  field: string;
+  dir: "asc" | "desc";
+}
+
 export function DisbursementGrid({ rows }: { rows: DisbursementRow[] }) {
+  const router = useRouter();
   const apiRef = useRef<any>(null);
   const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<SortState | null>(null);
+
   const total = useMemo(() => sumMinor(rows.map((r) => r.amountMinor)), [rows]);
+
+  /** AG Grid's own sorting has proven unreliable here (see slice 5.4);
+   *  apply the sort ourselves from the sortChanged events instead. */
+  const sortedRows = useMemo(() => {
+    if (!sort) return rows;
+    const compare = (a: DisbursementRow, b: DisbursementRow): number => {
+      if (sort.field === "amountMinor") {
+        const diff = Number(a.amountMinor) - Number(b.amountMinor);
+        return sort.dir === "asc" ? diff : -diff;
+      }
+      const av = String((a as unknown as Record<string, unknown>)[sort.field] ?? "");
+      const bv = String((b as unknown as Record<string, unknown>)[sort.field] ?? "");
+      return sort.dir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
+    };
+    return [...rows].sort(compare);
+  }, [rows, sort]);
+
+/** Row details: any row opens the coordinator detail page. */
+  function onRowClicked(event: { data?: DisbursementRow }) {
+    if (event.data) {
+      router.push(`/disbursements/${event.data.id}`);
+    }
+  }
 
   const columnDefs: any[] = [
     {
@@ -136,8 +169,9 @@ export function DisbursementGrid({ rows }: { rows: DisbursementRow[] }) {
       field: "amountMinor",
       headerName: "Amount",
       minWidth: 110,
-      sortable: true,
-      valueGetter: (p: any) => BigInt(p.data.amountMinor),
+      valueGetter: (p: any) => Number(p.data.amountMinor),
+      // AG Grid sorts on the valueGetter result; BigInt appears to
+      // break its ordering comparator, Number stays integer-safe
       valueFormatter: (p: any) => `$${formatMinor(BigInt(p.value))}`,
       cellClass: "ag-register-center font-semibold tabular-nums text-slate-900",
     },
@@ -209,19 +243,36 @@ export function DisbursementGrid({ rows }: { rows: DisbursementRow[] }) {
           {rows.length === 1 ? "disbursement" : "disbursements"} ·{" "}
           <span className="font-semibold tabular-nums text-slate-900">${formatMinor(total)}</span> total
         </p>
+        <button
+          type="button"
+          onClick={() =>
+            setSort((current) =>
+              current && current.field === "amountMinor"
+                ? current.dir === "asc"
+                  ? { field: "amountMinor", dir: "desc" }
+                  : null
+                : { field: "amountMinor", dir: "asc" },
+            )
+          }
+          aria-label="Sort by amount"
+          className="shrink-0 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-50"
+        >
+          Sort amount {sort?.field === "amountMinor" ? (sort.dir === "asc" ? "↑" : "↓") : "↕"}
+        </button>
       </div>
 
       <div className="overflow-hidden rounded-xl border border-slate-200" style={{ height: 520 }}>
         <AgGridReact
           theme={theme}
           icons={{ filter: SLIDERS_ICON }}
-          rowData={rows}
+          rowData={sortedRows}
           columnDefs={columnDefs}
           onGridReady={(e) => {
             apiRef.current = e.api;
             if (query) e.api.setGridOption("quickFilterText", query);
           }}
-          defaultColDef={{ sortable: true, filter: true, resizable: true, minWidth: 100 }}
+          onRowClicked={onRowClicked}
+          defaultColDef={{ sortable: false, filter: true, resizable: true, minWidth: 100 }}
           rowHeight={48}
           pagination
           paginationPageSize={10}
