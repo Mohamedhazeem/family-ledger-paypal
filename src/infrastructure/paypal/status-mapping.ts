@@ -30,6 +30,16 @@ export function mapBatchStatus(raw: string | null): PaymentStatus {
 }
 
 /**
+ * Mapped enum value for a raw status, or null when the raw value is
+ * not in our enum (so pollers never regress payment state on unknown
+ * future statuses while the raw value is preserved separately).
+ */
+export function knownBatchStatus(raw: string | null): PaymentStatus | null {
+  if (raw === null) return null;
+  return MAPPING[raw] ?? null;
+}
+
+/**
  * Friendly label for the coordinator UI. Unknown raw values are
  * surfaced as "Unknown (raw value)" — raw is always preserved in data.
  */

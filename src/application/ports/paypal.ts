@@ -22,10 +22,24 @@ export interface CreateBatchInput {
 
 export interface CreateBatchResult {
   payoutBatchId: string | null;
-  /** Raw PayPal batch status, preserved verbatim. */
+  /** Raw PayPal result, preserved verbatim. */
   batchStatus: string;
   /** Mapped to our payment enum by the adapter (unknown → STATUS_UNKNOWN). */
   paymentStatus: PaymentStatus;
+  raw: unknown;
+}
+
+export interface BatchStatusResult {
+  /** Raw batch status, preserved verbatim. */
+  batchStatus: string | null;
+  /** Raw item transaction status of the first item, preserved verbatim. */
+  itemStatus: string | null;
+  /**
+   * paymentStatus mapped from the batch status, or null when the raw
+   * value is unknown (so polling never regresses payment state on
+   * an unrecognized future status).
+   */
+  paymentStatus: PaymentStatus | null;
   raw: unknown;
 }
 
@@ -49,4 +63,9 @@ export interface PayoutsPort extends PayPalAuthPort {
    * and PayPalNetworkError for transport failures.
    */
   createBatch(_input: CreateBatchInput): Promise<CreateBatchResult>;
+  /**
+   * Fetches the current batch + item statuses (spec Step 9). Batch
+   * and item statuses are returned separately; unknowns preserved.
+   */
+  getBatchStatus(_payoutBatchId: string): Promise<BatchStatusResult>;
 }

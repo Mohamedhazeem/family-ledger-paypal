@@ -1,5 +1,6 @@
 import "server-only";
 import type {
+  BatchStatusResult,
   CreateBatchInput,
   CreateBatchResult,
   PayPalAuthPort,
@@ -7,7 +8,7 @@ import type {
 } from "@/application/ports/paypal";
 import { PayPalHttpError, PayPalNetworkError } from "@/application/ports/paypal";
 import { formatMinor } from "@/domain/value-objects/money";
-import { mapBatchStatus } from "./status-mapping";
+import { knownBatchStatus, mapBatchStatus } from "./status-mapping";
 
 /**
  * PayPal sandbox payouts adapter (Slice 4.3, spec §11 / §6 Step 8).
@@ -60,6 +61,37 @@ export class PayPalSandboxAdapter implements PayoutsPort {
       payoutBatchId: batchId,
       batchStatus: status,
       paymentStatus: mapBatchStatus(status),
+      raw: data,
+    };
+  }
+
+  /** Fetches batch + item statuses (spec Step 9), kept separate. */
+  async getBatchStatus(payoutBatchId: string): Promise<BatchStatusResult> {
+    const token = await this.auth.getAccessToken();
+    let response: Response;
+    try {
+      response = await fetch(`${this.baseUrl}/v1/payments/payouts/${encodeURIComponent(payoutBatchId)}`, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    } catch (cause) {
+      throw new PayPalNetworkError(
+        `PayPal request failed: ${cause instanceof Error ? cause.message : "network error"}`,
+      );
+    }
+    if (!response.ok) {
+      const text = await response.text().catch(() => "");
+      throw new PayPalHttpError(response.status, `PayPal status lookup failed with HTTP ${response.status}: ${text}`);
+    }
+    const data = (await response.json()) as {
+      batch_header?: { batch_status?: string };
+      items?: { transaction_status?: string }[];
+    };
+    const batchStatus = data.batch_header?.batch_status ?? null;
+    return {
+      batchStatus,
+      itemStatus: data.items?.[0]?.transaction_status ?? null,
+      paymentStatus: knownBatchStatus(batchStatus),
       raw: data,
     };
   }
