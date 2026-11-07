@@ -99,6 +99,17 @@ export class PrismaDisbursementRepository implements DisbursementRepository {
   async updatePaymentStatus(id: string, status: DisbursementRecord["paymentStatus"]): Promise<DisbursementRecord> {
     return prisma.disbursement.update({ where: { id }, data: { paymentStatus: status } });
   }
+
+  async updatePayoutFields(
+    id: string,
+    data: Partial<{
+      paypalPayoutBatchId: string | null;
+      paypalBatchStatus: string | null;
+      paypalItemStatus: string | null;
+    }>,
+  ): Promise<DisbursementRecord> {
+    return prisma.disbursement.update({ where: { id }, data });
+  }
 }
 
 /** Immutable plan snapshots: create-only port, no update/delete (spec §9). */
@@ -161,6 +172,17 @@ export class PrismaPayoutAttemptRepository implements PayoutAttemptRepository {
       where: { disbursementId },
       orderBy: { createdAt: "desc" },
     });
+  }
+
+  async update(
+    id: string,
+    data: Partial<{
+      paypalPayoutBatchId: string | null;
+      attemptState: PayoutAttemptRecord["attemptState"];
+      responsePayloadRedacted: string | null;
+    }>,
+  ): Promise<PayoutAttemptRecord> {
+    return prisma.payoutAttempt.update({ where: { id }, data });
   }
 }
 

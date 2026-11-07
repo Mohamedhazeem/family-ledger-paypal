@@ -62,6 +62,7 @@ function stubRepos() {
     findByPublicReference: async () => { throw new Error("unused"); },
     updatePlanStatus: async () => { throw new Error("unused"); },
     updatePaymentStatus: async () => { throw new Error("unused"); },
+    updatePayoutFields: async () => { throw new Error("unused"); },
   };
   const plans = {
     create: async (input: unknown) => {

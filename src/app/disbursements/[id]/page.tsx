@@ -253,7 +253,7 @@ export default async function DisbursementDetailPage({
         <CardContent className="space-y-4 pt-5">
           <h2 className="text-base font-semibold text-slate-900">Actions</h2>
           <AcknowledgeButton disbursementId={disbursement.id} />
-          <SendPaymentButton />
+          <SendPaymentButton disbursementId={disbursement.id} />
         </CardContent>
       </Card>
     </div>

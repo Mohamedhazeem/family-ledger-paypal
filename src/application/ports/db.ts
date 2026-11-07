@@ -119,6 +119,14 @@ export interface DisbursementRepository {
   findByPublicReference(_publicReference: string): Promise<DisbursementRecord | null>;
   updatePlanStatus(_id: string, _status: PlanStatus): Promise<DisbursementRecord>;
   updatePaymentStatus(_id: string, _status: PaymentStatus): Promise<DisbursementRecord>;
+  updatePayoutFields(
+    _id: string,
+    _data: Partial<{
+      paypalPayoutBatchId: string | null;
+      paypalBatchStatus: string | null;
+      paypalItemStatus: string | null;
+    }>,
+  ): Promise<DisbursementRecord>;
 }
 
 export type ActorType = "COORDINATOR" | "BENEFICIARY" | "SYSTEM";
@@ -243,6 +251,14 @@ export interface PayoutAttemptRepository {
   create(_input: PayoutAttemptInput): Promise<PayoutAttemptRecord>;
   findBySenderBatchId(_senderBatchId: string): Promise<PayoutAttemptRecord | null>;
   findLatestByDisbursementId(_disbursementId: string): Promise<PayoutAttemptRecord | null>;
+  update(
+    _id: string,
+    _data: Partial<{
+      paypalPayoutBatchId: string | null;
+      attemptState: AttemptState;
+      responsePayloadRedacted: string | null;
+    }>,
+  ): Promise<PayoutAttemptRecord>;
 }
 
 export interface RecipientInvitationRecord {

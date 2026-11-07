@@ -9,7 +9,7 @@ import type { PayPalAuthPort } from "@/application/ports/paypal";
  * actionable error. Server-only by construction (credentials never
  * reach the client).
  */
-const PAYOUTS_SCOPE = "https://uri.paypal.com/services/payouts";
+const PAYOUTS_SCOPE = "https://uri.paypal.com/payments/payouts";
 export const TOKEN_REFRESH_MARGIN_MS = 60_000;
 
 export interface PayPalAuthConfig {
@@ -41,6 +41,11 @@ export class PayPalSandboxAuth implements PayPalAuthPort {
     const fresh = await this.fetchToken();
     this.cached = fresh;
     return fresh.token;
+  }
+
+  /** Drops the cached token so the next call refreshes (e.g. after a 401). */
+  invalidate(): void {
+    this.cached = null;
   }
 
   private async fetchToken(retried = false): Promise<{ token: string; validUntil: number }> {

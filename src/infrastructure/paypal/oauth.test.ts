@@ -11,7 +11,7 @@ import { setupServer } from "msw/node";
 import { PayPalSandboxAuth } from "./oauth";
 
 const TOKEN_URL = "https://api-m.sandbox.paypal.com/v1/oauth2/token";
-const PAYOUTS_SCOPE = "https://uri.paypal.com/services/payouts";
+const PAYOUTS_SCOPE = "https://uri.paypal.com/payments/payouts";
 
 function tokenResponse(overrides: Record<string, unknown> = {}) {
   return HttpResponse.json({

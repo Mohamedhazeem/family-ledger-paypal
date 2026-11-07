@@ -31,9 +31,12 @@ loadEnvFile();
 const { prisma } = await import("@/infrastructure/db/prisma");
 const { SubmitPayout } = await import("@/application/use-cases/submit-payout");
 const {
+  PrismaBeneficiaryRepository,
   PrismaDisbursementRepository,
+  PrismaLedgerEventRepository,
   PrismaPayoutAttemptRepository,
 } = await import("@/infrastructure/db/repositories");
+const { PayPalSandboxAdapter } = await import("@/infrastructure/paypal/payouts");
 
 const createdDisbursementIds: string[] = [];
 
@@ -89,6 +92,12 @@ describe("SubmitPayout.begin (Slice 4.2)", () => {
     const useCase = new SubmitPayout(
       new PrismaDisbursementRepository(),
       new PrismaPayoutAttemptRepository(),
+      new PrismaBeneficiaryRepository(),
+      new PrismaLedgerEventRepository(),
+      new PayPalSandboxAdapter({
+        auth: { getAccessToken: async () => "access-token-1" },
+        baseUrl: "https://api-m.sandbox.paypal.com",
+      }),
     );
     const attempt = await useCase.begin({ coordinatorId: await coordinatorId(), disbursementId: id });
 
