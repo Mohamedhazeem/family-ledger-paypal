@@ -1,5 +1,6 @@
 import "server-only";
 import { NextResponse } from "next/server";
+import { withSecurityHeaders } from "@/lib/security/headers";
 import { headers } from "next/headers";
 import { AcceptPlan } from "@/application/use-cases/accept-plan";
 import { InvitationNotFoundError } from "@/application/use-cases/get-invitation-view";
@@ -16,7 +17,7 @@ import { RateLimit } from "@/lib/security/rate-limit";
  * Public mutation authorized by the invitation token alone (same
  * guards as the portal view). Rate-limited per IP (ADR-0007).
  */
-const mutationLimit = new RateLimit({ max: 60, windowMs: 60_000 });
+const mutationLimit = new RateLimit({ max: 10, windowMs: 60_000 });
 
 export async function POST(
   _request: Request,
@@ -26,7 +27,7 @@ export async function POST(
   const requestHeaders = await headers();
   const ip = requestHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
   if (!mutationLimit.check(`accept:${ip}`)) {
-    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    return withSecurityHeaders(NextResponse.json({ error: "Too many requests" }, { status: 429 }));
   }
   try {
     const result = await new AcceptPlan(
@@ -35,14 +36,14 @@ export async function POST(
       new PrismaPlanVersionRepository(),
       new PrismaLedgerEventRepository(),
     ).execute(token);
-    return NextResponse.json(result);
+    return withSecurityHeaders(NextResponse.json(result));
   } catch (error) {
     if (error instanceof InvitationNotFoundError) {
-      return NextResponse.json({ error: error.message }, { status: 404 });
+      return withSecurityHeaders(NextResponse.json({ error: error.message }, { status: 404 }));
     }
-    return NextResponse.json(
+    return withSecurityHeaders(NextResponse.json(
       { error: error instanceof Error ? error.message : "Could not accept the plan" },
       { status: 500 },
-    );
+    ));
   }
 }

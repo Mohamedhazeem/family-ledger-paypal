@@ -10,6 +10,8 @@ import {
   PrismaUserRepository,
 } from "@/infrastructure/db/repositories";
 import { requireSession } from "@/lib/auth/session";
+import { withSecurityHeaders } from "@/lib/security/headers";
+import { isSameOrigin } from "@/lib/security/csrf";
 
 /**
  * POST /api/disbursements (Slice 2.6, spec §6 Step 1; extended by 2.7).
@@ -44,23 +46,26 @@ const RequestSchema = z.object({
 
 export async function POST(request: Request) {
   const session = await requireSession();
+  if (!isSameOrigin(request)) {
+    return withSecurityHeaders(NextResponse.json({ error: "Cross-origin request rejected." }, { status: 403 }));
+  }
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return withSecurityHeaders(NextResponse.json({ error: "Unauthorized" }, { status: 401 }));
   }
 
   let body: unknown;
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    return withSecurityHeaders(NextResponse.json({ error: "Invalid JSON body" }, { status: 400 }));
   }
 
   const parsed = RequestSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json(
+    return withSecurityHeaders(NextResponse.json(
       { error: "Invalid request body", issues: parsed.error.issues },
       { status: 400 },
-    );
+    ));
   }
 
   try {
@@ -88,13 +93,13 @@ export async function POST(request: Request) {
           }
         : undefined,
     });
-    return NextResponse.json(
+    return withSecurityHeaders(NextResponse.json(
       { id: disbursement.id, publicReference: disbursement.publicReference },
       { status: 201 },
-    );
+    ));
   } catch (error) {
     const message = error instanceof Error ? error.message : "Could not create disbursement";
     const status = message.startsWith("Allocations exceed") ? 400 : 500;
-    return NextResponse.json({ error: message }, { status });
+    return withSecurityHeaders(NextResponse.json({ error: message }, { status }));
   }
 }

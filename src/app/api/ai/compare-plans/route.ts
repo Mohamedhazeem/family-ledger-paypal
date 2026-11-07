@@ -5,6 +5,7 @@ import type { PlanDiff } from "@/domain/plan-diff";
 import { ExplainPlanDiff } from "@/application/use-cases/explain-plan-diff";
 import { createAiProvider } from "@/infrastructure/ai/factory";
 import { requireSession } from "@/lib/auth/session";
+import { withSecurityHeaders } from "@/lib/security/headers";
 
 /**
  * POST /api/ai/compare-plans (Slice 3.6, spec §12B).
@@ -52,31 +53,31 @@ function toPlanDiff(wire: z.infer<typeof DiffSchema>): PlanDiff {
 export async function POST(request: Request) {
   const session = await requireSession();
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return withSecurityHeaders(NextResponse.json({ error: "Unauthorized" }, { status: 401 }));
   }
 
   let body: unknown;
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    return withSecurityHeaders(NextResponse.json({ error: "Invalid JSON body" }, { status: 400 }));
   }
 
   const parsed = DiffSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json(
+    return withSecurityHeaders(NextResponse.json(
       { error: "Invalid request body", issues: parsed.error.issues },
       { status: 400 },
-    );
+    ));
   }
 
   try {
     const result = await new ExplainPlanDiff(createAiProvider()).execute(toPlanDiff(parsed.data));
-    return NextResponse.json(result);
+    return withSecurityHeaders(NextResponse.json(result));
   } catch (error) {
-    return NextResponse.json(
+    return withSecurityHeaders(NextResponse.json(
       { error: error instanceof Error ? error.message : "Could not explain the diff" },
       { status: 502 },
-    );
+    ));
   }
 }

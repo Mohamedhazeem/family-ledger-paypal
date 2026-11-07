@@ -1,5 +1,6 @@
 import "server-only";
 import { NextResponse } from "next/server";
+import { withSecurityHeaders } from "@/lib/security/headers";
 import { prisma } from "@/infrastructure/db/prisma";
 
 /**
@@ -10,8 +11,8 @@ import { prisma } from "@/infrastructure/db/prisma";
 export async function GET() {
   try {
     await prisma.$queryRaw`SELECT 1`;
-    return NextResponse.json({ status: "ok" });
+    return withSecurityHeaders(NextResponse.json({ status: "ok" }));
   } catch {
-    return NextResponse.json({ status: "degraded" }, { status: 503 });
+    return withSecurityHeaders(NextResponse.json({ status: "degraded" }, { status: 503 }));
   }
 }

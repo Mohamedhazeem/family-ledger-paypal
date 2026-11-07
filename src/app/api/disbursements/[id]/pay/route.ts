@@ -13,6 +13,8 @@ import {
 } from "@/infrastructure/db/repositories";
 import { createPayoutsAdapter } from "@/infrastructure/paypal/factory";
 import { requireSession } from "@/lib/auth/session";
+import { withSecurityHeaders } from "@/lib/security/headers";
+import { isSameOrigin } from "@/lib/security/csrf";
 
 /**
  * POST /api/disbursements/[id]/pay (Slice 4.3, spec §6 Step 8).
@@ -20,12 +22,15 @@ import { requireSession } from "@/lib/auth/session";
  * attempt row first, then sends one full-amount sandbox payout.
  */
 export async function POST(
-  _request: Request,
+  request: Request,
   context: { params: Promise<{ id: string }> },
 ) {
   const session = await requireSession();
+  if (!isSameOrigin(request)) {
+    return withSecurityHeaders(NextResponse.json({ error: "Cross-origin request rejected." }, { status: 403 }));
+  }
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return withSecurityHeaders(NextResponse.json({ error: "Unauthorized" }, { status: 401 }));
   }
   const { id } = await context.params;
   try {
@@ -36,17 +41,17 @@ export async function POST(
       new PrismaLedgerEventRepository(),
       createPayoutsAdapter(),
     ).execute({ coordinatorId: session.user.id, disbursementId: id });
-    return NextResponse.json(result);
+    return withSecurityHeaders(NextResponse.json(result));
   } catch (error) {
     if (error instanceof DisbursementNotFoundError) {
-      return NextResponse.json({ error: error.message }, { status: 404 });
+      return withSecurityHeaders(NextResponse.json({ error: error.message }, { status: 404 }));
     }
     if (error instanceof CoordinatorMismatchError) {
-      return NextResponse.json({ error: error.message }, { status: 403 });
+      return withSecurityHeaders(NextResponse.json({ error: error.message }, { status: 403 }));
     }
-    return NextResponse.json(
+    return withSecurityHeaders(NextResponse.json(
       { error: error instanceof Error ? error.message : "Could not submit the payout" },
       { status: 500 },
-    );
+    ));
   }
 }

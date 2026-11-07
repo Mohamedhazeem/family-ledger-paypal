@@ -1,5 +1,6 @@
 import "server-only";
 import { NextResponse } from "next/server";
+import { withSecurityHeaders } from "@/lib/security/headers";
 import { headers } from "next/headers";
 import { z } from "zod";
 import { ProposeRevision } from "@/application/use-cases/propose-revision";
@@ -17,7 +18,7 @@ import { RateLimit } from "@/lib/security/rate-limit";
  * Public mutation authorized by the invitation token alone.
  * Rate-limited per IP (ADR-0007).
  */
-const mutationLimit = new RateLimit({ max: 60, windowMs: 60_000 });
+const mutationLimit = new RateLimit({ max: 10, windowMs: 60_000 });
 
 const RequestSchema = z.object({
   items: z.array(
@@ -38,21 +39,21 @@ export async function POST(
   const requestHeaders = await headers();
   const ip = requestHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
   if (!mutationLimit.check(`suggest:${ip}`)) {
-    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    return withSecurityHeaders(NextResponse.json({ error: "Too many requests" }, { status: 429 }));
   }
 
   let body: unknown;
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    return withSecurityHeaders(NextResponse.json({ error: "Invalid JSON body" }, { status: 400 }));
   }
   const parsed = RequestSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json(
+    return withSecurityHeaders(NextResponse.json(
       { error: "Invalid request body", issues: parsed.error.issues },
       { status: 400 },
-    );
+    ));
   }
 
   try {
@@ -69,13 +70,13 @@ export async function POST(
       })),
       explanation: parsed.data.explanation,
     });
-    return NextResponse.json(result);
+    return withSecurityHeaders(NextResponse.json(result));
   } catch (error) {
     if (error instanceof InvitationNotFoundError) {
-      return NextResponse.json({ error: error.message }, { status: 404 });
+      return withSecurityHeaders(NextResponse.json({ error: error.message }, { status: 404 }));
     }
     const message = error instanceof Error ? error.message : "Could not submit the revision";
     const status = message.startsWith("Allocations exceed") ? 400 : 500;
-    return NextResponse.json({ error: message }, { status });
+    return withSecurityHeaders(NextResponse.json({ error: message }, { status }));
   }
 }

@@ -11,6 +11,7 @@ import {
 } from "@/infrastructure/db/repositories";
 import { createPayoutsAdapter } from "@/infrastructure/paypal/factory";
 import { requireSession } from "@/lib/auth/session";
+import { withSecurityHeaders } from "@/lib/security/headers";
 
 /**
  * GET /api/disbursements/[id]/payout-status (Slice 4.6, spec Step 9).
@@ -23,7 +24,7 @@ export async function GET(
 ) {
   const session = await requireSession();
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return withSecurityHeaders(NextResponse.json({ error: "Unauthorized" }, { status: 401 }));
   }
   const { id } = await context.params;
   try {
@@ -32,17 +33,17 @@ export async function GET(
       new PrismaPayoutAttemptRepository(),
       createPayoutsAdapter(),
     ).execute({ coordinatorId: session.user.id, disbursementId: id });
-    return NextResponse.json(result);
+    return withSecurityHeaders(NextResponse.json(result));
   } catch (error) {
     if (error instanceof DisbursementNotFoundError) {
-      return NextResponse.json({ error: error.message }, { status: 404 });
+      return withSecurityHeaders(NextResponse.json({ error: error.message }, { status: 404 }));
     }
     if (error instanceof NoPayoutSubmittedError) {
-      return NextResponse.json({ error: error.message }, { status: 409 });
+      return withSecurityHeaders(NextResponse.json({ error: error.message }, { status: 409 }));
     }
-    return NextResponse.json(
+    return withSecurityHeaders(NextResponse.json(
       { error: error instanceof Error ? error.message : "Could not refresh the payout status" },
       { status: 502 },
-    );
+    ));
   }
 }
