@@ -6,7 +6,7 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
-  title: "FamilyLedger 2.0",
+  title: "Family Ledger",
   description: "Consent-first, AI-assisted family-support disbursement platform.",
 };
 

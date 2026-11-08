@@ -5,7 +5,6 @@ import { prisma } from "@/infrastructure/db/prisma";
 import { getSession } from "@/lib/auth/session";
 import { formatMinor } from "@/domain/value-objects/money";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { DisbursementGrid, type DisbursementRow } from "@/app/dashboard/disbursement-grid";
 
 /**
@@ -57,7 +56,6 @@ export default async function DisbursementsPage() {
             </p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
-            <Badge tone="info">Sandbox</Badge>
             <Link
               href="/disbursements/new"
               className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-500 to-violet-500 px-5 text-sm font-semibold text-white shadow-lg shadow-indigo-950/40 transition hover:brightness-110"

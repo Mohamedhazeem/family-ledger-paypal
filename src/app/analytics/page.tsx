@@ -6,7 +6,6 @@ import { PrismaUserRepository } from "@/infrastructure/db/repositories";
 import { getSession } from "@/lib/auth/session";
 import { AnalyticsWorkspace } from "@/components/analytics/analytics-workspace";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { formatMinor } from "@/domain/value-objects/money";
 import type { AnalyticsSnapshot } from "@/application/ports/analytics";
 
@@ -32,16 +31,18 @@ export default async function AnalyticsPage() {
   const empty = snapshot.totalDisbursements === 0;
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Analytics</h1>
-          <p className="text-sm text-slate-500">
-            Aggregate programme performance — counts and totals only, never personal data.
-          </p>
+    <div className="space-y-6 sm:space-y-8">
+      <section className="overflow-hidden rounded-3xl bg-slate-950 text-white">
+        <div className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-[0.2em] text-indigo-300">Aggregate insights</p>
+            <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">Analytics</h1>
+            <p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-300 sm:text-base">
+              Counts and totals only — never personal data. Plan and payment stay separate.
+            </p>
+          </div>
         </div>
-        <Badge tone="info">Aggregate-only</Badge>
-      </div>
+      </section>
 
       <div className="grid gap-4 sm:grid-cols-3">
         <Card>
@@ -92,7 +93,7 @@ export default async function AnalyticsPage() {
             title="Programme workspace"
             description={
               process.env.AG_STUDIO_LICENSE_KEY
-                ? "AG Studio embedded dashboard over the same aggregates."
+                ? "AG Studio builder over the same aggregates — drag widgets to visualize; data sources connected."
                 : "AG Grid fallback over the same aggregates (no sponsor licence key configured)."
             }
           />
@@ -104,6 +105,37 @@ export default async function AnalyticsPage() {
           </CardContent>
         </Card>
       )}
+
+      {!empty ? (
+        <Card>
+          <CardHeader title="Category breakdown" description="Allocated amounts by category — aggregate only." />
+          <CardContent className="space-y-3 pt-4">
+            {snapshot.categories.length === 0 ? (
+              <p className="text-sm text-slate-500">No categories yet.</p>
+            ) : (
+              <ul className="space-y-3">
+                {snapshot.categories.map((row) => {
+                  const max = Math.max(...snapshot.categories.map((r) => Number(r.amountMinor)));
+                  const pct = max > 0 ? (Number(row.amountMinor) / max) * 100 : 0;
+                  return (
+                    <li key={row.category} className="space-y-1.5">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="font-medium text-slate-700">{row.category}</span>
+                        <span className="tabular-nums text-slate-500">
+                          ${formatMinor(BigInt(row.amountMinor))} · {row.itemCount} items
+                        </span>
+                      </div>
+                      <div className="h-2.5 overflow-hidden rounded-full bg-slate-100">
+                        <div className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-violet-500" style={{ width: `${pct}%` }} />
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+      ) : null}
 
       {!empty ? (
         <Card>

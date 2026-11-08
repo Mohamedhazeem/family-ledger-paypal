@@ -26,8 +26,12 @@ export function VersionsGrid({ versions }: { versions: VersionItemView[] }) {
     );
   }
   return (
-    <div className="grid gap-4 md:grid-cols-2">
-      {versions.map((version) => (
+    <div className="space-y-3">
+      <p className="text-sm text-slate-500">
+        Versions are history, not choices — the latest version is the active shared plan. Acknowledging records your review; it never gates payment.
+      </p>
+      <div className="grid gap-4 md:grid-cols-2">
+        {versions.map((version) => (
         <Card key={version.id} className="h-full">
           <CardContent className="flex h-full flex-col space-y-3 pt-5">
             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -60,6 +64,7 @@ export function VersionsGrid({ versions }: { versions: VersionItemView[] }) {
           </CardContent>
         </Card>
       ))}
+      </div>
     </div>
   );
 }

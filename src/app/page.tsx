@@ -43,7 +43,7 @@ export default function Home() {
                   <span className="block text-indigo-600">before the money moves.</span>
                 </h1>
                 <p className="mt-6 max-w-xl text-lg text-slate-600">
-                  FamilyLedger 2.0 helps coordinators, beneficiaries, and sponsors agree on an
+                  Family Ledger helps coordinators, beneficiaries, and sponsors agree on an
                   allocation plan — while the PayPal payout stays one unrestricted transfer.
                 </p>
                 <div className="mt-8 flex flex-col gap-3 sm:flex-row">
