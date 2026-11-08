@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, CalendarDays, Link2, ShieldCheck, UserRound, Wallet } from "lucide-react";
 import { prisma } from "@/infrastructure/db/prisma";
 import { getSession } from "@/lib/auth/session";
 import { formatMinor } from "@/domain/value-objects/money";
@@ -9,18 +9,20 @@ import { diffPlans } from "@/domain/plan-diff";
 import { visibleTimeline } from "@/domain/timeline";
 import { formatStatusLabel, toneForStatus } from "@/app/dashboard/disbursement-formatting";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { AcknowledgeButton } from "@/components/disbursements/acknowledge-button";
-import { ExplainDiffButton } from "@/components/disbursements/explain-diff-button";
 import { RefreshPayoutStatusButton } from "@/components/disbursements/refresh-payout-status-button";
 import { RevokeInvitationButton } from "@/components/disbursements/revoke-invitation-button";
 import { SendPaymentButton } from "@/components/disbursements/send-payment-button";
+import { DiffCard, TimelineCard, VersionsGrid } from "./detail-sections";
 
 /**
  * GET /disbursements/[id] (Slice 3.7, spec §6 Step 7, §14E):
  * full amount, side-by-side latest plans, version history,
  * deterministic diff + AI explanation, PayPal references, and the
  * explicit (acknowledgement-independent) send-payment action.
+ * Responsive: single column on mobile, two columns on tablet,
+ * three columns with a sticky action rail on large screens.
  */
 export default async function DisbursementDetailPage({
   params,
@@ -35,7 +37,7 @@ export default async function DisbursementDetailPage({
     where: { id },
     include: { beneficiary: true },
   });
-  if (!disbursement || disbursement.coordinatorId !== session!.user.id) {
+  if (!disbursement || disbursement.coordinatorId !== session.user.id) {
     notFound();
   }
 
@@ -49,18 +51,8 @@ export default async function DisbursementDetailPage({
   const diff =
     latest && previous
       ? diffPlans(
-          {
-            items: previous.items.map((item) => ({
-              category: item.category,
-              amountMinor: item.amountMinor,
-            })),
-          },
-          {
-            items: latest.items.map((item) => ({
-              category: item.category,
-              amountMinor: item.amountMinor,
-            })),
-          },
+          { items: previous.items.map((item) => ({ category: item.category, amountMinor: item.amountMinor })) },
+          { items: latest.items.map((item) => ({ category: item.category, amountMinor: item.amountMinor })) },
         )
       : null;
 
@@ -75,193 +67,131 @@ export default async function DisbursementDetailPage({
   const timeline = visibleTimeline(ledgerEvents, "coordinator");
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 sm:space-y-8">
       <div>
-        <Link href="/disbursements" className="text-sm font-medium text-indigo-600 hover:text-indigo-700">
-          <ArrowLeft className="mr-1 inline h-4 w-4" />
-          Back to disbursements
+        <Link href="/disbursements" className="inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-800">
+          <ArrowLeft className="h-4 w-4" /> Back to disbursements
         </Link>
-        <div className="mt-2 flex flex-wrap items-center gap-3">
-          <h1 className="text-2xl font-bold text-slate-900">{disbursement.publicReference}</h1>
-          <Badge tone={toneForStatus(disbursement.planStatus)}>
-            {formatStatusLabel(disbursement.planStatus)}
-          </Badge>
-          <Badge tone="neutral">{formatStatusLabel(disbursement.paymentStatus)}</Badge>
-        </div>
-        <p className="text-sm text-slate-500">Beneficiary: {disbursement.beneficiary.displayName}</p>
+
+        <section className="mt-4 overflow-hidden rounded-3xl bg-slate-950 text-white">
+          <div className="p-6 sm:p-8">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge tone={toneForStatus(disbursement.planStatus)}>{formatStatusLabel(disbursement.planStatus)}</Badge>
+              <Badge tone={toneForStatus(disbursement.paymentStatus)}>{formatStatusLabel(disbursement.paymentStatus)}</Badge>
+              {disbursement.paymentMode === "MOCK" ? <Badge tone="warning">MOCK PAYMENT</Badge> : null}
+            </div>
+            <div className="mt-5 grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+              <div>
+                <h1 className="break-all font-mono text-2xl font-bold tracking-tight sm:text-3xl">
+                  {disbursement.publicReference}
+                </h1>
+                <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-300">
+                  <span className="inline-flex items-center gap-1.5"><UserRound className="h-4 w-4" /> {disbursement.beneficiary.displayName}</span>
+                  <span className="inline-flex items-center gap-1.5"><CalendarDays className="h-4 w-4" /> {disbursement.createdAt.toLocaleDateString()}</span>
+                </p>
+              </div>
+              <div className="rounded-2xl bg-white/5 p-5 text-left lg:text-right">
+                <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Full payment amount</p>
+                <p className="mt-1 text-4xl font-bold tabular-nums tracking-tight sm:text-5xl">
+                  ${formatMinor(disbursement.amountMinor)} <span className="text-lg text-slate-400">{disbursement.currency}</span>
+                </p>
+                <p className="mt-1 text-xs text-slate-400">One unrestricted payout — never split by category</p>
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
 
-      <Card>
-        <CardContent className="pt-5">
-          <p className="text-sm text-slate-500">Full payment amount (one unrestricted payout)</p>
-          <p className="mt-1 text-4xl font-bold tabular-nums text-slate-900">
-            ${formatMinor(disbursement.amountMinor)} {disbursement.currency}
-          </p>
-          <dl className="mt-4 space-y-3">
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-              <span className="text-slate-500">PayPal batch</span>
-              <Badge tone="info">{friendlyBatchStatus(disbursement.paypalBatchStatus)}</Badge>
-              <span className="text-slate-500">PayPal item</span>
-              <Badge tone="info">{friendlyBatchStatus(disbursement.paypalItemStatus)}</Badge>
-              {disbursement.paymentMode === "MOCK" ? (
-                <Badge tone="warning">MOCK PAYMENT</Badge>
-              ) : null}
-            </div>
-            <div>
-              <RefreshPayoutStatusButton disbursementId={disbursement.id} />
-            </div>
-          </dl>
-        </CardContent>
-      </Card>
-
-      {versions.length > 0 ? (
-        <div className="grid gap-4 lg:grid-cols-2">
-          {[previous, latest].filter(Boolean).map((version) => (
-            <Card key={version!.id}>
-              <CardContent className="space-y-3 pt-5">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-base font-semibold text-slate-900">Version {version!.versionNumber}</h2>
-                  <Badge tone={version!.createdByType === "BENEFICIARY" ? "info" : "neutral"}>
-                    {version!.createdByType === "BENEFICIARY" ? "Beneficiary" : "Coordinator"}
-                  </Badge>
+      <div className="grid gap-6 lg:grid-cols-2 2xl:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="space-y-6">
+          <Card>
+            <CardHeader title="Payment status" description="Batch and item statuses are tracked separately. Batch SUCCESS never implies item delivery." />
+            <CardContent className="space-y-4">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <p className="text-xs uppercase tracking-wider text-slate-500">PayPal batch</p>
+                  <p className="mt-2"><Badge tone="info">{friendlyBatchStatus(disbursement.paypalBatchStatus)}</Badge></p>
                 </div>
-                {version!.explanation ? (
-                  <p className="text-sm italic text-slate-600">“{version!.explanation}”</p>
-                ) : null}
-                {version!.items.length === 0 ? (
-                  <p className="text-sm text-slate-500">No categories in this version.</p>
-                ) : (
-                  <ul className="divide-y divide-slate-100">
-                    {version!.items.map((item) => (
-                      <li key={item.id} className="flex items-center justify-between py-2">
-                        <span className="text-sm text-slate-700">{item.category}</span>
-                        <span className="text-sm font-semibold tabular-nums text-slate-900">
-                          {item.amountMinor === null ? "Flexible" : `$${formatMinor(item.amountMinor)}`}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                <p className="text-xs text-slate-500">
-                  Allocated ${formatMinor(version!.totalAllocatedMinor)} · Unallocated $
-                  {formatMinor(version!.unallocatedMinor)}
-                </p>
-              </CardContent>
-            </Card>
-          ))}
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <p className="text-xs uppercase tracking-wider text-slate-500">PayPal item</p>
+                  <p className="mt-2"><Badge tone="info">{friendlyBatchStatus(disbursement.paypalItemStatus)}</Badge></p>
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
+                <RefreshPayoutStatusButton disbursementId={disbursement.id} />
+                <p className="text-xs text-slate-500">Explicit refresh only — no auto-polling.</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <VersionsGrid versions={versions} />
+
+          {diff && previous && latest ? (
+            <DiffCard previousNumber={previous.versionNumber} latestNumber={latest.versionNumber} diff={diff} />
+          ) : null}
+
+          <TimelineCard timeline={timeline} />
         </div>
-      ) : (
-        <Card>
-          <CardContent className="pt-5 text-sm text-slate-500">
-            No plan versions yet.
-          </CardContent>
-        </Card>
-      )}
 
-      {diff ? (
-        <Card>
-          <CardContent className="space-y-4 pt-5">
-            <h2 className="text-base font-semibold text-slate-900">
-              Changes: Version {previous!.versionNumber} → Version {latest!.versionNumber}
-            </h2>
-            <ul className="space-y-1 text-sm">
-              {diff.added.map((entry) => (
-                <li key={`a-${entry.category}`} className="text-emerald-700">
-                  + Added {entry.category}
-                  {entry.v2AmountMinor === null ? "" : ` (${"$" + formatMinor(entry.v2AmountMinor)})`}
-                </li>
-              ))}
-              {diff.removed.map((entry) => (
-                <li key={`r-${entry.category}`} className="text-rose-600">
-                  − Removed {entry.category}
-                  {entry.v1AmountMinor === null ? "" : ` (${"$" + formatMinor(entry.v1AmountMinor)})`}
-                </li>
-              ))}
-              {diff.changed.map((entry) => (
-                <li key={`c-${entry.category}`} className="text-amber-700">
-                  ~ {entry.category}: {entry.v1AmountMinor === null ? "—" : `$${formatMinor(entry.v1AmountMinor)}`}
-                  {" → "}
-                  {entry.v2AmountMinor === null ? "—" : `$${formatMinor(entry.v2AmountMinor)}`}
-                  {entry.deltaMinor === null
-                    ? ""
-                    : ` (${entry.deltaMinor > 0n ? "+" : ""}$${formatMinor(entry.deltaMinor < 0n ? -entry.deltaMinor : entry.deltaMinor)})`}
-                </li>
-              ))}
-              {diff.unchanged.map((entry) => (
-                <li key={`u-${entry.category}`} className="text-slate-500">
-                  = {entry.category} unchanged
-                </li>
-              ))}
-            </ul>
-            <ExplainDiffButton
-              diff={JSON.parse(
-                JSON.stringify(diff, (_key, value) =>
-                  typeof value === "bigint" ? value.toString() : value,
-                ),
+        <aside className="space-y-6 lg:sticky lg:top-24 lg:self-start">
+          <Card className="overflow-hidden">
+            <div className="bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-4 sm:px-6">
+              <p className="flex items-center gap-2 text-sm font-semibold text-white">
+                <Wallet className="h-4 w-4" /> Coordinator actions
+              </p>
+              <p className="mt-1 text-xs text-indigo-100">Acknowledge is never a release condition for payment.</p>
+            </div>
+            <CardContent className="space-y-6 pt-5">
+              <div className="space-y-2">
+                <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Acknowledge plan</p>
+                <AcknowledgeButton disbursementId={disbursement.id} />
+              </div>
+              <div className="space-y-2">
+                <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Send payment</p>
+                <SendPaymentButton disbursementId={disbursement.id} />
+              </div>
+              <p className="flex gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs leading-relaxed text-emerald-800">
+                <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
+                One full sandbox payout with an explicit confirmation. Beneficiary consent never gates payment.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader title="Invitations" description="Secure, expiring, revocable links." />
+            <CardContent>
+              {invitations.length === 0 ? (
+                <p className="py-4 text-center text-sm text-slate-500">No invitations yet.</p>
+              ) : (
+                <ul className="space-y-3">
+                  {invitations.map((invitation) => {
+                    // eslint-disable-next-line react-hooks/purity -- server render, evaluated once per request
+                    const expired = invitation.expiresAt.getTime() <= Date.now();
+                    const status = invitation.revokedAt ? "Revoked" : expired ? "Expired" : "Active";
+                    return (
+                      <li key={invitation.id} className="rounded-2xl border border-slate-200 bg-slate-50/60 p-3">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <span className="inline-flex items-center gap-1.5 text-sm text-slate-700">
+                            <Link2 className="h-4 w-4 text-slate-400" />
+                            Invitation ·{" "}
+                            <span className={`font-semibold ${status === "Active" ? "text-emerald-700" : status === "Revoked" ? "text-rose-600" : "text-amber-600"}`}>
+                              {status}
+                            </span>
+                          </span>
+                          {status === "Active" ? (
+                            <RevokeInvitationButton disbursementId={disbursement.id} invitationId={invitation.id} />
+                          ) : null}
+                        </div>
+                        <p className="mt-1 text-xs text-slate-500">Expires {invitation.expiresAt.toLocaleDateString()}</p>
+                      </li>
+                    );
+                  })}
+                </ul>
               )}
-            />
-          </CardContent>
-        </Card>
-      ) : null}
-
-      <Card>
-        <CardContent className="space-y-4 pt-5">
-          <h2 className="text-base font-semibold text-slate-900">Invitations</h2>
-          {invitations.length === 0 ? (
-            <p className="text-sm text-slate-500">No invitations yet.</p>
-          ) : (
-            <ul className="space-y-2">
-              {invitations.map((invitation) => {
-                // eslint-disable-next-line react-hooks/purity -- server render, evaluated once per request
-                const expired = invitation.expiresAt.getTime() <= Date.now();
-                const status = invitation.revokedAt ? "Revoked" : expired ? "Expired" : "Active";
-                return (
-                  <li key={invitation.id} className="flex flex-wrap items-center justify-between gap-2 py-1.5">
-                    <span className="text-sm text-slate-700">
-                      Link · expires {invitation.expiresAt.toLocaleDateString()} ·{" "}
-                      <span className="font-medium">{status}</span>
-                    </span>
-                    {status === "Active" ? (
-                      <RevokeInvitationButton
-                        disbursementId={disbursement.id}
-                        invitationId={invitation.id}
-                      />
-                    ) : null}
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardContent className="space-y-3 pt-5">
-          <h2 className="text-base font-semibold text-slate-900">Timeline</h2>
-          {timeline.length === 0 ? (
-            <p className="text-sm text-slate-500">No events yet.</p>
-          ) : (
-            <ol className="space-y-2">
-              {timeline.map((entry, index) => (
-                <li key={`${entry.eventType}-${index}`} className="flex items-baseline justify-between gap-3 text-sm">
-                  <span className="text-slate-700">{entry.label}</span>
-                  <time className="shrink-0 text-xs tabular-nums text-slate-400">
-                    {entry.createdAt.toLocaleString()}
-                  </time>
-                </li>
-              ))}
-            </ol>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardContent className="space-y-4 pt-5">
-          <h2 className="text-base font-semibold text-slate-900">Actions</h2>
-          <AcknowledgeButton disbursementId={disbursement.id} />
-          <SendPaymentButton disbursementId={disbursement.id} />
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        </aside>
+      </div>
     </div>
   );
 }

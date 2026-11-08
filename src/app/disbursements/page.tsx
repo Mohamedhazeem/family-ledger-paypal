@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Plus } from "lucide-react";
+import { ArrowUpRight, CheckCircle2, Plus, Wallet } from "lucide-react";
 import { prisma } from "@/infrastructure/db/prisma";
 import { getSession } from "@/lib/auth/session";
 import { formatMinor } from "@/domain/value-objects/money";
@@ -39,55 +39,67 @@ export default async function DisbursementsPage() {
   ).length;
   const success = rows.filter((r) => r.paymentStatus === "SUCCESS").length;
 
-  return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Disbursements</h1>
-          <p className="text-sm text-slate-500">
-            Every disbursement in the programme — click a row to open its detail.
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Badge tone="info">Sandbox</Badge>
-          <Link
-            href="/disbursements/new"
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 text-sm font-medium text-white shadow-sm transition hover:bg-indigo-700"
-          >
-            <Plus className="h-4 w-4" />
-            New disbursement
-          </Link>
-        </div>
-      </div>
+  const stats = [
+    { label: "Disbursements", value: rows.length.toString(), sub: "in this programme", icon: Wallet, color: "bg-indigo-100 text-indigo-700" },
+    { label: "Total amount", value: `$${formatMinor(total)}`, sub: "USD, unrestricted", icon: Wallet, color: "bg-violet-100 text-violet-700" },
+    { label: "Pending · Succeeded", value: `${pending} · ${success}`, sub: "payment state", icon: CheckCircle2, color: "bg-emerald-100 text-emerald-700" },
+  ];
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <Card>
-          <CardContent>
-            <p className="text-sm text-slate-500">Disbursements</p>
-            <p className="mt-2 text-2xl font-bold text-slate-900">{rows.length}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent>
-            <p className="text-sm text-slate-500">Total amount</p>
-            <p className="mt-2 text-2xl font-bold tabular-nums text-slate-900">
-              ${formatMinor(total)}
+  return (
+    <div className="space-y-6 sm:space-y-8">
+      <section className="overflow-hidden rounded-3xl bg-slate-950 text-white">
+        <div className="grid gap-6 p-6 sm:p-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-[0.2em] text-indigo-300">Programme register</p>
+            <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">Disbursements</h1>
+            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-300 sm:text-base">
+              Every disbursement in one place. Search, filter, and open any row for its plan, payment, and timeline.
             </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent>
-            <p className="text-sm text-slate-500">Pending · Succeeded</p>
-            <p className="mt-2 text-2xl font-bold text-slate-900">
-              {pending} · <span className="text-emerald-600">{success}</span>
-            </p>
-          </CardContent>
-        </Card>
+          </div>
+          <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
+            <Badge tone="info">Sandbox</Badge>
+            <Link
+              href="/disbursements/new"
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-500 to-violet-500 px-5 text-sm font-semibold text-white shadow-lg shadow-indigo-950/40 transition hover:brightness-110"
+            >
+              <Plus className="h-4 w-4" />
+              New disbursement
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {stats.map((s) => {
+          const Icon = s.icon;
+          return (
+            <Card key={s.label}>
+              <CardContent className="flex items-start justify-between gap-3 pt-5">
+                <div>
+                  <p className="text-sm text-slate-500">{s.label}</p>
+                  <p className="mt-2 text-3xl font-bold tracking-tight tabular-nums text-slate-900">{s.value}</p>
+                  <p className="mt-1 text-xs text-slate-400">{s.sub}</p>
+                </div>
+                <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${s.color}`}>
+                  <Icon className="h-5 w-5" />
+                </span>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       <Card>
-        <CardHeader title="Disbursement register" description="All disbursements, most recent first." />
-        <CardContent className="pt-4">
+        <CardHeader
+          title="Disbursement register"
+          description="All disbursements, most recent first. Click a row to open its detail."
+          action={
+            <Link href="/dashboard" className="inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-800">
+              Overview <ArrowUpRight className="h-4 w-4" />
+            </Link>
+          }
+        />
+        <CardContent>
           <DisbursementGrid rows={gridRows} />
         </CardContent>
       </Card>
