@@ -11,33 +11,23 @@ a live remittance service and not a production-ready financial product.
 
 ## What this project is about
 
-FamilyLedger is a tool for **diaspora associations, employers, charities
-and community-support programmes** that send household support payments.
+FamilyLedger is a tool for **diaspora associations, employers, charities and community-support programmes** that send household support payments.
 
-A programme coordinator usually has an intended use for the money — rent,
-school fees, medicine — but says it informally ("$300 for rent, $150 for
-school, $50 for food" in a chat message). The recipient may have
-different or changing priorities, and language barriers turn good
-intentions into misunderstandings **before the money moves**.
+A programme coordinator usually has an intended use for the money — rent, school fees, medicine — but says it informally ("$300 for rent, $150 for school, $50 for food" in a chat message). The recipient may have different or changing priorities, and language barriers turn good intentions into misunderstandings **before the money moves**.
 
-FamilyLedger lets the coordinator draft the intended plan in natural
-language, AI turns it into a structured, editable allocation plan, and the
-beneficiary receives a secure link to **accept, suggest changes, or
-decline to share** any plan. AI explains any differences in neutral
-language. The coordinator then sends **one full, unrestricted PayPal
-payout** — the payment is never split, restricted, or conditioned on the
-plan. FamilyLedger records the plan and the payment as two separate
-things, with an append-only history.
+FamilyLedger lets the coordinator draft the intended plan in natural language, AI turns it into a structured, editable allocation plan, and the beneficiary receives a secure link to **accept, suggest changes, or
+decline to share** any plan. AI explains any differences in neutral language. The coordinator then sends **one full, unrestricted PayPal payout** — the payment is never split, restricted, or conditioned on the
+plan. FamilyLedger records the plan and the payment as two separate things, with an append-only history.
 
 ## The problem it solves
 
-| Today | With FamilyLedger |
-|---|---|
-| Intent lives in informal chat messages; misinterpretation surfaces only after money arrives | The plan is explicit, structured and mutually understood **before** disbursement |
-| Purpose tags or restricted funds make the payer's wish a condition, and the recipient loses autonomy | The plan is a **voluntary shared understanding**; the payout is always the full amount |
-| Recipients are surveilled for compliance (receipts, proof of spending) | No receipts, no spending monitoring — consent and dignity stay intact |
-| Cross-language support breaks down | AI translates labels and explanations; **amounts and IDs are never translated** |
-| Payment and agreement history are tangled | `planStatus` and `paymentStatus` are **independent state machines**; every transition is an append-only event |
+| Today                                                                                                | With FamilyLedger                                                                                             |
+| ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Intent lives in informal chat messages; misinterpretation surfaces only after money arrives          | The plan is explicit, structured and mutually understood **before** disbursement                              |
+| Purpose tags or restricted funds make the payer's wish a condition, and the recipient loses autonomy | The plan is a **voluntary shared understanding**; the payout is always the full amount                        |
+| Recipients are surveilled for compliance (receipts, proof of spending)                               | No receipts, no spending monitoring — consent and dignity stay intact                                         |
+| Cross-language support breaks down                                                                   | AI translates labels and explanations; **amounts and IDs are never translated**                               |
+| Payment and agreement history are tangled                                                            | `planStatus` and `paymentStatus` are **independent state machines**; every transition is an append-only event |
 
 ## How it works (end-to-end)
 
@@ -54,13 +44,13 @@ things, with an append-only history.
 
 ### Seeded demo scenario (synthetic)
 
-Organisation *Community Family Support Programme* → coordinator **Alex
+Organisation _Community Family Support Programme_ → coordinator **Alex
 Morgan** → beneficiary **Maria Santos** → **USD 500.00**.
-Note: *"Please allocate $300 for rent, $150 for school fees and $50 for
-food."* Beneficiary moves the last $50 from *Food* to *Medicine*; AI
-explanation: *"The beneficiary proposed changing the final $50 allocation
+Note: _"Please allocate $300 for rent, $150 for school fees and $50 for
+food."_ Beneficiary moves the last $50 from _Food_ to _Medicine_; AI
+explanation: _"The beneficiary proposed changing the final $50 allocation
 from food to medicine. The total support amount remains $500. The PayPal
-payment amount is unchanged."*
+payment amount is unchanged."_
 
 ## The PayPal + AI solution (the hackathon core)
 
@@ -71,14 +61,14 @@ adding one adapter file; no use case, state machine, or screen changes.
 
 ### PayPal Payouts — one real sandbox payment, sent safely
 
-**Flow:** coordinator clicks *Send full payment* → a `PayoutAttempt` row is
+**Flow:** coordinator clicks _Send full payment_ → a `PayoutAttempt` row is
 persisted **before** any external call, carrying a unique `sender_batch_id` and
 `sender_item_id` → the adapter exchanges client credentials for a cached OAuth
 token (auto-refreshed, and retried once on 401) after verifying the
 `https://uri.paypal.com/payments/payouts` scope → it POSTs
 `/v1/payments/payouts` with **exactly one item for the full amount** and a
 neutral note containing only the `FL-` reference → the returned batch id and
-status are stored verbatim → *Refresh status* GETs the batch, and the batch
+status are stored verbatim → _Refresh status_ GETs the batch, and the batch
 status and the item `transaction_status` are mapped to our `PaymentStatus`
 and stored **separately**.
 
@@ -123,7 +113,7 @@ Judged on features, not vendor names:
 - **Consent-first, payment-unconditional.** The beneficiary can accept, revise, or **decline to share** a plan and still receive the full payment. Consent is requested; eligibility is never gated on it.
 - **AI is advisory-only.** It cannot approve, initiate, cancel, or change a payout. Structured output is Zod-validated, every amount carries `evidenceText`, and nothing is silently invented.
 - **Deterministic core, AI on top.** Diffs, totals, state transitions and status mapping are computed in plain code; AI only explains and translates. If AI is unavailable, deterministic templates carry the same flows.
-- **Honest payment engineering.** `sender_batch_id` is persisted *before* the PayPal call and reused on retries (PayPal dedupes for 30 days); a single-submission lock and `SUBMITTING`/`STATUS_UNKNOWN` states mean an uncertain timeout is never shown as paid. A batch `SUCCESS` can still contain an `UNCLAIMED` item — both are stored and displayed separately.
+- **Honest payment engineering.** `sender_batch_id` is persisted _before_ the PayPal call and reused on retries (PayPal dedupes for 30 days); a single-submission lock and `SUBMITTING`/`STATUS_UNKNOWN` states mean an uncertain timeout is never shown as paid. A batch `SUCCESS` can still contain an `UNCLAIMED` item — both are stored and displayed separately.
 - **Privacy by construction.** PayPal recipient emails are AES-256-GCM encrypted at rest and never exposed to the beneficiary portal. No receipts, no spending verification, no beneficiary scoring — deliberately out of scope.
 - **Two independent state machines.** `PlanStatus` (DRAFT → INVITED → ACCEPTED / REVISION_PROPOSED / DECLINED_TO_SHARE / NO_RESPONSE → CLOSED) and `PaymentStatus` (NOT_SENT → SUBMITTING → PENDING/SUCCESS/UNCLAIMED/…) never mutate each other.
 - **Multilingual without corruption.** Labels and explanations localise (en/ta/hi); canonical amounts and references never change mid-translation.
@@ -249,24 +239,24 @@ steps in order; stop and ask the human only for values you cannot generate.
 Full list lives in `.env.example` (template — never commit real values).
 `src/env.ts` validates these at boot with Zod; a missing value fails fast.
 
-| Variable | Required | What it is |
-|---|---|---|
-| `NODE_ENV` | yes | `development` / `test` / `production` |
-| `APP_URL` | yes | Base URL of the app, e.g. `http://localhost:3000` |
-| `AUTH_SECRET` | yes | Better Auth session secret, ≥16 chars |
-| `DATABASE_URL` | yes | PostgreSQL connection string |
-| `APP_ENCRYPTION_KEY` | yes | Exactly 64 hex chars (32 bytes); AES-256-GCM key for the encrypted PayPal recipient email |
-| `AI_PROVIDER` | yes | AI provider id, e.g. `openai` (OpenAI-compatible) |
-| `AI_API_KEY` | yes | AI provider API key |
-| `AI_MODEL` | yes | Model id used for extraction / explanation / translation |
-| `AI_BASE_URL` | optional | Base URL for non-OpenAI OpenAI-compatible endpoints |
-| `PAYPAL_ENV` | yes | `sandbox` for the judge demo; `mock` selects the offline adapter for tests/dev (`live` is out of scope and throws) |
-| `PAYPAL_CLIENT_ID` | yes | PayPal sandbox app client id |
-| `PAYPAL_CLIENT_SECRET` | yes | PayPal sandbox app secret |
-| `PAYPAL_WEBHOOK_ID` | optional | Webhook verification id (stretch feature) |
-| `AG_STUDIO_LICENSE_KEY` | optional | Enables AG Studio analytics; otherwise a labelled AG Grid fallback renders |
-| `DEMO_MODE` | yes | Demo-labelling flag (e.g. `true`) |
-| `PORT` | optional | Injected by Render; not needed locally |
+| Variable                | Required | What it is                                                                                                         |
+| ----------------------- | -------- | ------------------------------------------------------------------------------------------------------------------ |
+| `NODE_ENV`              | yes      | `development` / `test` / `production`                                                                              |
+| `APP_URL`               | yes      | Base URL of the app, e.g. `http://localhost:3000`                                                                  |
+| `AUTH_SECRET`           | yes      | Better Auth session secret, ≥16 chars                                                                              |
+| `DATABASE_URL`          | yes      | PostgreSQL connection string                                                                                       |
+| `APP_ENCRYPTION_KEY`    | yes      | Exactly 64 hex chars (32 bytes); AES-256-GCM key for the encrypted PayPal recipient email                          |
+| `AI_PROVIDER`           | yes      | AI provider id, e.g. `openai` (OpenAI-compatible)                                                                  |
+| `AI_API_KEY`            | yes      | AI provider API key                                                                                                |
+| `AI_MODEL`              | yes      | Model id used for extraction / explanation / translation                                                           |
+| `AI_BASE_URL`           | optional | Base URL for non-OpenAI OpenAI-compatible endpoints                                                                |
+| `PAYPAL_ENV`            | yes      | `sandbox` for the judge demo; `mock` selects the offline adapter for tests/dev (`live` is out of scope and throws) |
+| `PAYPAL_CLIENT_ID`      | yes      | PayPal sandbox app client id                                                                                       |
+| `PAYPAL_CLIENT_SECRET`  | yes      | PayPal sandbox app secret                                                                                          |
+| `PAYPAL_WEBHOOK_ID`     | optional | Webhook verification id (stretch feature)                                                                          |
+| `AG_STUDIO_LICENSE_KEY` | optional | Enables AG Studio analytics; otherwise a labelled AG Grid fallback renders                                         |
+| `DEMO_MODE`             | yes      | Demo-labelling flag (e.g. `true`)                                                                                  |
+| `PORT`                  | optional | Injected by Render; not needed locally                                                                             |
 
 Where the PayPal values come from: PayPal Developer Dashboard → sandbox
 app → client id/secret, with the `https://uri.paypal.com/payments/payouts`

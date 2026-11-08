@@ -19,18 +19,35 @@ interface StudioModule {
  * otherwise the AG Grid fallback over the same aggregate DTOs
  * (the AGENTS §4 / ADR-0010 fallback, recorded honestly).
  */
-export function AnalyticsWorkspace({ licenseKey }: { licenseKey?: string }) {
-  const [snapshot, setSnapshot] = useState<AnalyticsSnapshot | null>(null);
+export function AnalyticsWorkspace({
+  licenseKey,
+  initialSnapshot,
+}: {
+  licenseKey?: string;
+  initialSnapshot?: AnalyticsSnapshot;
+}) {
+  const [snapshot, setSnapshot] = useState<AnalyticsSnapshot | null>(initialSnapshot ?? null);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
+    if (initialSnapshot) return;
     fetch("/api/analytics/aggregates")
       .then((res) => (res.ok ? res.json() : null))
-      .then((data) => setSnapshot(data))
-      .catch(() => setSnapshot(null));
-  }, []);
+      .then((data) => {
+        if (data) setSnapshot(data);
+        else setFailed(true);
+      })
+      .catch(() => setFailed(true));
+  }, [initialSnapshot]);
 
   if (!snapshot) {
-    return <p className="text-sm text-slate-500">Loading analytics…</p>;
+    return (
+      <p className="text-sm text-slate-500">
+        {failed
+          ? "Could not load programme aggregates. Check the API and try again."
+          : "Loading analytics…"}
+      </p>
+    );
   }
 
   if (licenseKey) {
