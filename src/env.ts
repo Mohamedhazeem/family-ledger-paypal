@@ -36,7 +36,7 @@ export const env = createEnv({
     AI_API_KEY: z.string().min(1),
     AI_MODEL: z.string().min(1),
     AI_BASE_URL: z.string().url().optional(),
-    PAYPAL_ENV: z.enum(["sandbox", "live"]),
+    PAYPAL_ENV: z.enum(["sandbox", "live", "mock"]),
     PAYPAL_CLIENT_ID: z.string().min(1),
     PAYPAL_CLIENT_SECRET: z.string().min(1),
     PAYPAL_WEBHOOK_ID: z.string().min(1).optional(),

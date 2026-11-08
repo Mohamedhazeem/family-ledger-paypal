@@ -117,6 +117,8 @@ export interface DisbursementRepository {
   create(_input: DisbursementInput): Promise<DisbursementRecord>;
   findById(_id: string): Promise<DisbursementRecord | null>;
   findByPublicReference(_publicReference: string): Promise<DisbursementRecord | null>;
+  /** Lookup by the PayPal payout batch id (webhook resolution). */
+  findByPayoutBatchId(_payoutBatchId: string): Promise<DisbursementRecord | null>;
   updatePlanStatus(_id: string, _status: PlanStatus): Promise<DisbursementRecord>;
   updatePaymentStatus(_id: string, _status: PaymentStatus): Promise<DisbursementRecord>;
   /**

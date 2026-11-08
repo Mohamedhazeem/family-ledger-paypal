@@ -1,9 +1,8 @@
 import "server-only";
-import { headers } from "next/headers";
-import { auth } from "@/infrastructure/auth/better-auth";
+import { authPort } from "@/infrastructure/auth/auth-port";
 
 export async function getSession() {
-  return auth.api.getSession({ headers: await headers() });
+  return authPort.getSession();
 }
 
 export async function requireSession() {

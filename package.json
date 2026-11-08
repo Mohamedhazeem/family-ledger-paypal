@@ -22,11 +22,11 @@
     "prepare": "husky",
     "postinstall": "prisma generate",
     "format": "prettier --write .",
+    "check:file-size": "npx tsx scripts/check-file-size.ts",
     "db:reset": "prisma migrate reset --force"
   },
   "dependencies": {
     "@better-auth/prisma-adapter": "1.7.18",
-    "@hookform/resolvers": "7.0.3",
     "@prisma/adapter-pg": "7.10.1",
     "@prisma/client": "7.10.1",
     "@tailwindcss/postcss": "4.3.4",
@@ -44,12 +44,9 @@
     "openai": "7.53.0",
     "pg": "8.23.1",
     "pino": "10.4.0",
-    "qrcode": "1.5.4",
     "react": "19.3.1",
     "react-dom": "19.3.1",
-    "react-hook-form": "7.91.0",
     "server-only": "0.0.1",
-    "sonner": "2.0.8",
     "tailwindcss": "4.3.4",
     "zod": "4.6.7"
   },
@@ -61,7 +58,6 @@
     "@testing-library/user-event": "14.6.8",
     "@types/node": "22.20.5",
     "@types/pg": "8.23.1",
-    "@types/qrcode": "1.5.6",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "eslint": "10.14.0",

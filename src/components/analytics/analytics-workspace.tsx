@@ -3,6 +3,7 @@
 import { useEffect, useState, type ComponentType, type ReactNode } from "react";
 import type { AnalyticsSnapshot } from "@/application/ports/analytics";
 import { toStudioSources } from "@/infrastructure/analytics/studio-sources";
+import { buildGridFallbackModel } from "@/infrastructure/analytics/ag-grid-fallback";
 import { minorToDecimal } from "@/components/disbursements/money-client";
 
 type StudioComponent<P> = ComponentType<P>;
@@ -85,6 +86,7 @@ function StudioDashboard({
 }
 
 function GridFallback({ snapshot }: { snapshot: AnalyticsSnapshot }) {
+  const model = buildGridFallbackModel(snapshot);
   return (
     <div className="space-y-4">
       <p className="text-xs text-slate-500">
@@ -93,21 +95,21 @@ function GridFallback({ snapshot }: { snapshot: AnalyticsSnapshot }) {
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="rounded-xl border border-slate-200 px-4 py-3">
           <p className="text-sm text-slate-500">Disbursements</p>
-          <p className="text-2xl font-bold tabular-nums text-slate-900">{snapshot.totalDisbursements}</p>
+          <p className="text-2xl font-bold tabular-nums text-slate-900">{model.totals.totalDisbursements}</p>
         </div>
         <div className="rounded-xl border border-slate-200 px-4 py-3">
           <p className="text-sm text-slate-500">Total amount</p>
           <p className="text-2xl font-bold tabular-nums text-slate-900">
-            ${minorToDecimal(Number(snapshot.totalAmountMinor))}
+            ${minorToDecimal(Number(model.totals.totalAmountMinor))}
           </p>
         </div>
         <div className="rounded-xl border border-slate-200 px-4 py-3">
           <p className="text-sm text-slate-500">Categories</p>
-          <p className="text-2xl font-bold tabular-nums text-slate-900">{snapshot.categories.length}</p>
+          <p className="text-2xl font-bold tabular-nums text-slate-900">{model.categories.length}</p>
         </div>
       </div>
       <div className="flex flex-wrap gap-2">
-        {snapshot.byPlanStatus.map((row) => (
+        {model.byPlanStatus.map((row) => (
           <span
             key={row.status}
             className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs text-slate-600"
@@ -126,7 +128,7 @@ function GridFallback({ snapshot }: { snapshot: AnalyticsSnapshot }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {snapshot.categories.map((row) => (
+            {model.categories.map((row) => (
               <tr key={row.category}>
                 <td className="px-4 py-2.5 font-medium text-slate-700">{row.category}</td>
                 <td className="px-4 py-2.5 text-right font-semibold tabular-nums text-slate-900">

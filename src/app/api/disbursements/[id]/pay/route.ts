@@ -15,6 +15,7 @@ import { createPayoutsAdapter } from "@/infrastructure/paypal/factory";
 import { requireSession } from "@/lib/auth/session";
 import { withSecurityHeaders } from "@/lib/security/headers";
 import { isSameOrigin } from "@/lib/security/csrf";
+import { logger } from "@/lib/log";
 
 /**
  * POST /api/disbursements/[id]/pay (Slice 4.3, spec §6 Step 8).
@@ -41,8 +42,21 @@ export async function POST(
       new PrismaLedgerEventRepository(),
       createPayoutsAdapter(),
     ).execute({ coordinatorId: session.user.id, disbursementId: id });
+    logger.info(
+      {
+        event: "payout_submitted",
+        disbursementId: id,
+        senderBatchId: result.senderBatchId,
+        paymentStatus: result.paymentStatus,
+      },
+      "Payout submitted",
+    );
     return withSecurityHeaders(NextResponse.json(result));
   } catch (error) {
+    logger.error(
+      { event: "payout_submit_failed", disbursementId: id },
+      error instanceof Error ? error.message : "Could not submit the payout",
+    );
     if (error instanceof DisbursementNotFoundError) {
       return withSecurityHeaders(NextResponse.json({ error: error.message }, { status: 404 }));
     }

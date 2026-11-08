@@ -37,6 +37,17 @@ export interface ExtractedPlan {
   clarificationQuestion: string | null;
 }
 
+export interface TranslateInput {
+  text: string;
+  /** Target display language: en, ta, or hi. */
+  targetLang: "en" | "ta" | "hi";
+}
+
+export interface TranslateResult {
+  /** Translated text. Canonical amounts and IDs are never translated. */
+  translatedText: string;
+}
+
 export interface AiProvider {
   /** Config probe: returns the configured provider and model name. */
   ping(): Promise<AiPingResult>;
@@ -50,4 +61,9 @@ export interface AiProvider {
    * receives only the diff; it must not compute amounts.
    */
   explainDiff(_diff: PlanDiff): Promise<ExplainDiffResult>;
+  /**
+   * Translates display labels/explanations only (spec §12C). Amounts,
+   * references, and IDs must pass through unchanged.
+   */
+  translate(_input: TranslateInput): Promise<TranslateResult>;
 }

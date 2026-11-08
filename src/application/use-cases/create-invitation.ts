@@ -4,6 +4,7 @@ import type {
   LedgerEventRepository,
   RecipientInvitationRepository,
 } from "@/application/ports/db";
+import type { Clock } from "@/application/ports/clock";
 
 export const INVITATION_TOKEN_BYTES = 32;
 export const INVITATION_EXPIRY_DAYS = 7;
@@ -32,15 +33,18 @@ export class CreateInvitation {
   private readonly disbursements: DisbursementRepository;
   private readonly invitations: RecipientInvitationRepository;
   private readonly ledger: LedgerEventRepository;
+  private readonly clock: Clock;
 
   constructor(
     disbursements: DisbursementRepository,
     invitations: RecipientInvitationRepository,
     ledger: LedgerEventRepository,
+    clock: Clock = { now: () => Date.now(), date: () => new Date() },
   ) {
     this.disbursements = disbursements;
     this.invitations = invitations;
     this.ledger = ledger;
+    this.clock = clock;
   }
 
   async execute(input: CreateInvitationInput): Promise<CreatedInvitation> {
@@ -53,7 +57,7 @@ export class CreateInvitation {
     }
     const token = randomBytes(INVITATION_TOKEN_BYTES).toString("base64url");
     const tokenHash = createHash("sha256").update(token).digest("hex");
-    const expiresAt = new Date(Date.now() + INVITATION_EXPIRY_DAYS * 24 * 60 * 60 * 1000);
+    const expiresAt = new Date(this.clock.now() + INVITATION_EXPIRY_DAYS * 24 * 60 * 60 * 1000);
     const invitation = await this.invitations.create({
       disbursementId: input.disbursementId,
       tokenHash,

@@ -12,6 +12,7 @@ import {
 import { createPayoutsAdapter } from "@/infrastructure/paypal/factory";
 import { requireSession } from "@/lib/auth/session";
 import { withSecurityHeaders } from "@/lib/security/headers";
+import { logger } from "@/lib/log";
 
 /**
  * GET /api/disbursements/[id]/payout-status (Slice 4.6, spec Step 9).
@@ -33,6 +34,14 @@ export async function GET(
       new PrismaPayoutAttemptRepository(),
       createPayoutsAdapter(),
     ).execute({ coordinatorId: session.user.id, disbursementId: id });
+    logger.info(
+      {
+        event: "payout_status_refreshed",
+        disbursementId: id,
+        paymentStatus: result.paymentStatus,
+      },
+      "Payout status refreshed",
+    );
     return withSecurityHeaders(NextResponse.json(result));
   } catch (error) {
     if (error instanceof DisbursementNotFoundError) {

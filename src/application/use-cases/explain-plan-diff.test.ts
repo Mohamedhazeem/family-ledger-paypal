@@ -19,6 +19,7 @@ function stubProvider(fail = false): { provider: AiProvider; calls: () => number
       if (fail) throw new Error("model unavailable");
       return { explanation: "The plan adds a medicine allowance." };
     },
+    translate: async (input) => ({ translatedText: input.text }),
   };
   return { provider, calls: () => count };
 }

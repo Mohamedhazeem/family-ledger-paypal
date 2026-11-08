@@ -23,5 +23,9 @@ export const ExtractedPlanSchema = z.strictObject({
   clarificationQuestion: z.string().nullable(),
 });
 
+export const TranslateSchema = z.strictObject({
+  translatedText: z.string().min(1),
+});
+
 export type ExtractedPlanItem = z.infer<typeof ExtractedPlanItemSchema>;
 export type ExtractedPlan = z.infer<typeof ExtractedPlanSchema>;

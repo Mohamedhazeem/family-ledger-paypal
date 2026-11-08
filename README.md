@@ -90,18 +90,19 @@ and stored **separately**.
 - Batch `SUCCESS` never implies item delivery: a `SUCCESS` batch can still hold an `UNCLAIMED` item. Unknown statuses (e.g. the seeded `FOO` row) are preserved verbatim next to a friendly label.
 - No invented fields: request/response shapes follow the official Payouts v1 contract, verified against live sandbox responses — a real sandbox batch was created and polled during the build (see `docs/verification-log.md`).
 - `PAYPAL_ENV=live` throws: this MVP is sandbox-only, and no claim of live-money sending is made anywhere.
-- `MOCK` mode exists for tests/dev and is visibly badged `MOCK PAYMENT`; the judge demo uses a real sandbox call.
+- `MOCK` mode (`PAYPAL_ENV=mock`) selects the offline MockPayPalAdapter for tests/dev; rows created through it are visibly badged `MOCK PAYMENT`; the judge demo uses a real sandbox call. Unknown statuses (e.g. the seeded `FOO` row) are preserved verbatim next to a friendly label.
 
 Credential setup, OAuth curl, and the failure guide: [`docs/paypal-sandbox.md`](docs/paypal-sandbox.md).
 
 ### AI — advisory only, every output validated
 
 Three jobs, all behind `AiProvider` (OpenAI-compatible adapter, selectable via
-`AI_PROVIDER` / `AI_BASE_URL`, e.g. a local or third-party endpoint):
+`AI_PROVIDER` / `AI_BASE_URL`, e.g. a local or third-party endpoint; offline
+MockAiAdapter via `AI_PROVIDER=mock`):
 
 1. **Parse support intent** — an informal note becomes a structured plan: summary, items with `category`, `amountText` (or `null`), `evidenceText` per line, `confidence`, and a `requiresClarification` flag. Output is validated by a **strict Zod schema** (unknown keys rejected, evidence required). Deterministic rules then police the result: the total may not exceed the disbursement, no amounts are inferred, and each amount is converted once into integer minor units with decimal-safe math — never floats.
 2. **Explain the revision** — the version-to-version diff (e.g. `~ Rent: $300.00 → $250.00 (−$50.00)`, `+ Added Medicine`) is computed in **deterministic code**. AI receives only that diff and writes one short neutral sentence; the prompt forbids computing or inventing amounts and forbids judgment language ("misused", "suspicious"). If the model is unavailable, a deterministic fallback explanation is built from the same diff.
-3. **Localise the beneficiary portal** — display labels are localised (English / Tamil / Hindi) via static dictionaries; **canonical amounts and identifiers are never translated**. The model is never in the payment path.
+3. **Translate labels/explanations** — `POST /api/ai/translate` translates display text into en/ta/hi behind the same `translate()` port method (schema-validated; the prompt forbids changing amounts or IDs). The beneficiary portal itself uses static en/ta/hi label dictionaries so amounts and identifiers stay canonical; **canonical amounts and identifiers are never translated**. The model is never in the payment path.
 
 **Hard limits:** AI cannot approve, initiate, cancel, or change a payout, cannot decide
 eligibility, and cannot infer sensitive circumstances. Untrusted note text is treated
@@ -259,7 +260,7 @@ Full list lives in `.env.example` (template — never commit real values).
 | `AI_API_KEY` | yes | AI provider API key |
 | `AI_MODEL` | yes | Model id used for extraction / explanation / translation |
 | `AI_BASE_URL` | optional | Base URL for non-OpenAI OpenAI-compatible endpoints |
-| `PAYPAL_ENV` | yes | Must be `sandbox` for this MVP (`live` is out of scope) |
+| `PAYPAL_ENV` | yes | `sandbox` for the judge demo; `mock` selects the offline adapter for tests/dev (`live` is out of scope and throws) |
 | `PAYPAL_CLIENT_ID` | yes | PayPal sandbox app client id |
 | `PAYPAL_CLIENT_SECRET` | yes | PayPal sandbox app secret |
 | `PAYPAL_WEBHOOK_ID` | optional | Webhook verification id (stretch feature) |

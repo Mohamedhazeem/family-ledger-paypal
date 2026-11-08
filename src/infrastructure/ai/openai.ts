@@ -1,8 +1,8 @@
 import "server-only";
 import OpenAI from "openai";
-import type { AiPingResult, AiProvider, ExplainDiffResult, ExtractedPlan, ParseIntentInput } from "@/application/ports/ai";
+import type { AiPingResult, AiProvider, ExplainDiffResult, ExtractedPlan, ParseIntentInput, TranslateInput, TranslateResult } from "@/application/ports/ai";
 import type { PlanDiff } from "@/domain/plan-diff";
-import { ExtractedPlanSchema } from "./schemas";
+import { ExtractedPlanSchema, TranslateSchema } from "./schemas";
 
 /**
  * OpenAI-compatible adapter (ADR-0005, ADR-0016).
@@ -130,6 +130,46 @@ export class OpenAiAdapter implements AiProvider {
       throw new Error("AI provider returned an empty response.");
     }
     return { explanation: content };
+  }
+
+  /**
+   * Translates labels/explanations only (spec §12C). Amounts, references
+   * and IDs are passed through unchanged by the prompt; the result is
+   * schema-validated before it is returned.
+   */
+  async translate(input: TranslateInput): Promise<TranslateResult> {
+    const completion = await this.client.chat.completions.create({
+      model: this.model,
+      messages: [
+        {
+          role: "system",
+          content:
+            "You translate short display labels and explanations into en, ta or hi. " +
+            "Reply with ONLY a JSON object with a single key translatedText. " +
+            "Never translate or change numbers, amounts, currency codes, references or IDs. " +
+            "If the text contains an amount or ID, copy it into the output exactly as written.",
+        },
+        {
+          role: "user",
+          content: JSON.stringify({ text: input.text, targetLang: input.targetLang }),
+        },
+      ],
+    });
+    const content = completion.choices[0]?.message?.content;
+    if (!content) {
+      throw new Error("AI provider returned an empty response.");
+    }
+    let json: unknown;
+    try {
+      json = JSON.parse(stripCodeFence(content));
+    } catch {
+      throw new Error("AI provider did not return valid JSON.");
+    }
+    const parsed = TranslateSchema.safeParse(json);
+    if (!parsed.success) {
+      throw new Error("AI provider output failed schema validation.");
+    }
+    return parsed.data;
   }
 }
 

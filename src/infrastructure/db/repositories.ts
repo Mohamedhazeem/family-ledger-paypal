@@ -92,6 +92,10 @@ export class PrismaDisbursementRepository implements DisbursementRepository {
     return prisma.disbursement.findUnique({ where: { publicReference } });
   }
 
+  async findByPayoutBatchId(payoutBatchId: string): Promise<DisbursementRecord | null> {
+    return prisma.disbursement.findFirst({ where: { paypalPayoutBatchId: payoutBatchId } });
+  }
+
   async updatePlanStatus(id: string, status: DisbursementRecord["planStatus"]): Promise<DisbursementRecord> {
     return prisma.disbursement.update({ where: { id }, data: { planStatus: status } });
   }

@@ -60,6 +60,7 @@ function stubRepos() {
     },
     findById: async () => { throw new Error("unused"); },
     findByPublicReference: async () => { throw new Error("unused"); },
+    findByPayoutBatchId: async () => { throw new Error("unused"); },
     updatePlanStatus: async () => { throw new Error("unused"); },
     updatePaymentStatus: async () => { throw new Error("unused"); },
     claimForSubmission: async () => { throw new Error("unused"); },
