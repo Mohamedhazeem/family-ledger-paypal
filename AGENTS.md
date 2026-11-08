@@ -54,7 +54,7 @@
 | PayPal Payouts | `src/application/ports/paypal.ts` (`PayoutsPort`) | `PayPalSandboxAdapter` (`src/infrastructure/paypal/`), `MockPayPalAdapter` | `PAYPAL_ENV`, `PAYPAL_CLIENT_ID/SECRET/WEBHOOK_ID` | Implement port in `src/infrastructure/paypal/`; register in factory; reuse `PayoutAttempt` idempotency guard. |
 | AG Studio analytics | `src/application/ports/analytics.ts` (`AnalyticsPort`) (aggregate-only) | `AgStudioAdapter` (`src/infrastructure/analytics/`), `AgGridFallbackAdapter` | `AG_STUDIO_LICENSE_KEY` | Add adapter exposing same aggregate DTOs; UI unchanged. Fallback = grid only (ADR-0010). |
 | Email | `src/application/ports/email.ts` (`EmailPort`) | `NoopEmailAdapter`, `ResendAdapter` (post-MVP) | `EMAIL_PROVIDER` (optional) | Add adapter implementing `send()`, keep invitation links functional without email. |
-| Auth | `src/application/ports/auth.ts` (`AuthPort`) | `AuthJsCredentials` | `AUTH_SECRET` | New provider implements same session interface; route guards unchanged. |
+| Auth | `src/application/ports/auth.ts` (`AuthPort`) | `BetterAuthAdapter` (`src/infrastructure/auth/auth-port.ts`) | `AUTH_SECRET` | New provider implements same session interface; route guards unchanged. |
 | DB | `src/application/ports/db.ts` (repository ports) | `PrismaPostgres` | `DATABASE_URL` | Swap via Prisma datasource; services use repositories, not raw client in business code. |
 
 - Every adapter: validate external responses with Zod, map to domain DTOs, redact secrets/PII in logs. Business callers depend only on ports (SOLID: single-responsibility services, dependency inversion). See ADR-0016.
