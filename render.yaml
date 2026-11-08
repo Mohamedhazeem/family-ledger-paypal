@@ -26,6 +26,8 @@ services:
         sync: false
       - key: AI_PROVIDER
         value: openai
+      - key: AI_MODEL
+        sync: false
       - key: AI_API_KEY
         sync: false
       - key: PAYPAL_CLIENT_ID
@@ -39,6 +41,4 @@ databases:
     plan: free
     databaseName: family_ledger
     user: family_ledger
-    enableDataTransfer: false
-    deleteProtection: false
-    highAvailability: false
+    postgresMajorVersion: "16"

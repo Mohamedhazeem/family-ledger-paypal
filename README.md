@@ -295,6 +295,7 @@ scope granted — step-by-step in [`docs/paypal-sandbox.md`](docs/paypal-sandbox
 - [`docs/deploy-runbook.md`](docs/deploy-runbook.md) — Render deploy, migrations, rollback
 - [`docs/verification-log.md`](docs/verification-log.md) — command → outcome per slice
 - [`docs/demo-script.md`](docs/demo-script.md) — 3-minute talk track
+- [`docs/repo-page.md`](docs/repo-page.md) — GitHub About description, topics, apply/verify runbook
 - [`docs/implementation-plan.md`](docs/implementation-plan.md) — build checklist
 - [`docs/postman/family-ledger.postman_collection.json`](docs/postman/family-ledger.postman_collection.json) + environment template — API-verifiable payout flow (sandbox)
 - [`AGENTS.md`](AGENTS.md) — contributor rules; [`FamilyLedger_Spec_and_Build_Plan.md`](FamilyLedger_Spec_and_Build_Plan.md) — full spec (single source of truth)
