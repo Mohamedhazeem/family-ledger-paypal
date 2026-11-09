@@ -40,12 +40,20 @@ export function DashboardShell({
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return localStorage.getItem("fl-sidebar-collapsed") === "1";
-  });
+  // Start expanded on both server and client so SSR HTML matches hydration;
+  // the persisted preference is applied after mount (useEffect below).
+  const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+
+  useEffect(() => {
+    // Defer reading the persisted preference out of the synchronous
+    // effect body to avoid a cascading render (react-hooks/set-state-in-effect).
+    const id = window.setTimeout(() => {
+      setCollapsed(localStorage.getItem("fl-sidebar-collapsed") === "1");
+    }, 0);
+    return () => window.clearTimeout(id);
+  }, []);
 
   useEffect(() => {
     localStorage.setItem("fl-sidebar-collapsed", collapsed ? "1" : "0");
@@ -62,25 +70,34 @@ export function DashboardShell({
   function SidebarContent({ collapsed: c }: { collapsed: boolean }) {
     return (
       <div className="flex h-full flex-col bg-slate-950 text-slate-300">
-        <div className={`flex items-center gap-3 px-4 py-5 ${c ? "justify-center px-2" : "px-5"}`}>
+        <div className={`flex py-5 ${c ? "flex-col items-center gap-2 px-2" : "items-center gap-3 px-4 sm:px-5"}`}>
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-lg shadow-indigo-950/50">
             <Wallet className="h-5 w-5 text-white" />
           </span>
           {!c ? (
-            <span className="min-w-0">
-              <span className="block truncate font-semibold tracking-tight text-white">Family Ledger</span>
-            </span>
-          ) : null}
-        </div>
-        <div className={`px-2 pb-2 ${c ? "flex justify-center" : ""}`}>
-          <button
-            className="rounded-xl p-2 text-slate-400 transition hover:bg-white/5 hover:text-slate-100"
-            onClick={() => setCollapsed((v) => !v)}
-            aria-label={c ? "Expand sidebar" : "Collapse sidebar"}
-            title={c ? "Expand sidebar" : "Collapse sidebar"}
-          >
-            {c ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
-          </button>
+            <>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate font-semibold tracking-tight text-white">Family Ledger</span>
+              </span>
+              <button
+                className="rounded-xl p-2 text-slate-400 transition hover:bg-white/5 hover:text-slate-100"
+                onClick={() => setCollapsed((v) => !v)}
+                aria-label="Collapse sidebar"
+                title="Collapse sidebar"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </button>
+            </>
+          ) : (
+            <button
+              className="rounded-xl p-2 text-slate-400 transition hover:bg-white/5 hover:text-slate-100"
+              onClick={() => setCollapsed((v) => !v)}
+              aria-label="Expand sidebar"
+              title="Expand sidebar"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+          )}
         </div>
 
         {!c ? (
@@ -156,8 +173,8 @@ export function DashboardShell({
         {open ? (
           <div className="fixed inset-0 z-50 lg:hidden">
             <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" onClick={() => setOpen(false)} />
-            <aside className="absolute left-0 top-0 h-full w-[300px] max-w-[85vw] overflow-hidden shadow-2xl">
-              {SidebarContent({ collapsed: false })}
+            <aside className={`absolute left-0 top-0 h-full max-w-[85vw] overflow-hidden shadow-2xl ${collapsed ? "w-[80px]" : "w-[300px]"}`}>
+              {SidebarContent({ collapsed })}
             </aside>
           </div>
         ) : null}
