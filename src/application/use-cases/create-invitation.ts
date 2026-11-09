@@ -58,6 +58,26 @@ export class CreateInvitation {
     const token = randomBytes(INVITATION_TOKEN_BYTES).toString("base64url");
     const tokenHash = createHash("sha256").update(token).digest("hex");
     const expiresAt = new Date(this.clock.now() + INVITATION_EXPIRY_DAYS * 24 * 60 * 60 * 1000);
+    // Regenerate pattern: one live link per disbursement. Issuing a new
+    // invitation supersedes the previous active ones (revoked/expired
+    // records stay untouched as audit history).
+    const now = new Date(this.clock.now());
+    const existing = await this.invitations.listByDisbursementId(input.disbursementId);
+    for (const invitation of existing) {
+      if (invitation.revokedAt === null && invitation.expiresAt > now) {
+        await this.invitations.revoke(invitation.id, now);
+        await this.ledger.create({
+          disbursementId: input.disbursementId,
+          actorType: "COORDINATOR",
+          actorId: input.coordinatorId,
+          eventType: "INVITATION_REVOKED",
+          payloadJson: JSON.stringify({
+            invitationId: invitation.id,
+            reason: "SUPERSEDED_BY_NEW_INVITATION",
+          }),
+        });
+      }
+    }
     const invitation = await this.invitations.create({
       disbursementId: input.disbursementId,
       tokenHash,

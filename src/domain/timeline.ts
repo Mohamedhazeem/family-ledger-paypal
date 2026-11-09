@@ -14,6 +14,7 @@ export type LedgerEventType =
   | "PLAN_VERSION_CREATED"
   | "INVITATION_CREATED"
   | "INVITATION_VIEWED"
+  | "INVITATION_REVOKED"
   | "PLAN_ACCEPTED"
   | "PLAN_REVISION_PROPOSED"
   | "PLAN_DECLINED"
@@ -32,6 +33,9 @@ export const TIMELINE_VISIBILITY: Record<LedgerEventType, TimelineVisibility> = 
   PLAN_VERSION_CREATED: { coordinator: true, beneficiary: true },
   INVITATION_CREATED: { coordinator: true, beneficiary: true },
   INVITATION_VIEWED: { coordinator: true, beneficiary: true },
+  // Link administration is operator-side: the beneficiary portal simply
+  // stops working, with no shared-history entry.
+  INVITATION_REVOKED: { coordinator: true, beneficiary: false },
   PLAN_ACCEPTED: { coordinator: true, beneficiary: true },
   PLAN_REVISION_PROPOSED: { coordinator: true, beneficiary: true },
   PLAN_DECLINED: { coordinator: true, beneficiary: true },
@@ -48,6 +52,7 @@ const LABELS: Record<LedgerEventType, { coordinator: string; beneficiary: string
   PLAN_VERSION_CREATED: { coordinator: "Plan draft generated", beneficiary: "Plan draft generated" },
   INVITATION_CREATED: { coordinator: "Invitation created", beneficiary: "Invitation created" },
   INVITATION_VIEWED: { coordinator: "Invitation viewed", beneficiary: "Invitation viewed" },
+  INVITATION_REVOKED: { coordinator: "Invitation revoked", beneficiary: "Invitation revoked" },
   PLAN_ACCEPTED: { coordinator: "Beneficiary accepted the plan", beneficiary: "You accepted the plan" },
   PLAN_REVISION_PROPOSED: { coordinator: "Beneficiary suggested changes", beneficiary: "You suggested changes" },
   PLAN_DECLINED: { coordinator: "Beneficiary declined to share a plan", beneficiary: "You chose not to share a plan" },

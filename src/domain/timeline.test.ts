@@ -8,6 +8,7 @@
 import { describe, expect, it } from "vitest";
 import {
   TIMELINE_VISIBILITY,
+  timelineLabel,
   timelineLabelsFor,
   visibleTimeline,
 } from "./timeline";
@@ -67,6 +68,17 @@ describe("shared timeline visibility (Slice 3.12)", () => {
   it("unknown event types are hidden from the beneficiary", () => {
     const timeline = visibleTimeline(
       [{ eventType: "SOME_FUTURE_TYPE", createdAt: new Date(0) }],
+      "beneficiary",
+    );
+    expect(timeline).toEqual([]);
+  });
+
+  it("invitation revocation is labelled for the coordinator and hidden from the beneficiary", () => {
+    // Link administration is operator-side; the beneficiary portal simply
+    // stops working, with no shared-history entry.
+    expect(timelineLabel("INVITATION_REVOKED", "coordinator")).toBe("Invitation revoked");
+    const timeline = visibleTimeline(
+      [{ eventType: "INVITATION_REVOKED", createdAt: new Date(0) }],
       "beneficiary",
     );
     expect(timeline).toEqual([]);

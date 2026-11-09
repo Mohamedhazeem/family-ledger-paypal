@@ -78,14 +78,19 @@ export class GetInvitationView {
     const version = await this.plans.findLatestByDisbursementId(disbursement.id);
     const items = version ? await this.plans.findItemsByVersionId(version.id) : [];
 
+    // Track the latest view, but only write the append-only "viewed"
+    // event on the first view — repeat opens must not flood the
+    // shared timeline.
     await this.invitations.markViewed(invitation.id, new Date());
-    await this.ledger.create({
-      disbursementId: disbursement.id,
-      actorType: "BENEFICIARY",
-      actorId: null,
-      eventType: "INVITATION_VIEWED",
-      payloadJson: JSON.stringify({ invitationId: invitation.id }),
-    });
+    if (invitation.lastViewedAt === null) {
+      await this.ledger.create({
+        disbursementId: disbursement.id,
+        actorType: "BENEFICIARY",
+        actorId: null,
+        eventType: "INVITATION_VIEWED",
+        payloadJson: JSON.stringify({ invitationId: invitation.id }),
+      });
+    }
 
     return {
       disbursementId: disbursement.id,
