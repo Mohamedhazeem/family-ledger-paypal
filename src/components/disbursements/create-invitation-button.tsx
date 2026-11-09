@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Copy, Link2 } from "lucide-react";
+import { Check, Copy, Link2, Mail, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 /**
@@ -63,6 +63,22 @@ export function CreateInvitationButton({ disbursementId }: { disbursementId: str
             {copied ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
             {copied ? "Copied" : "Copy link"}
           </Button>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <a
+            href={`mailto:?subject=${encodeURIComponent("Your family support plan")}&body=${encodeURIComponent(`Here is your secure FamilyLedger invitation link (valid until ${new Date(link.expiresAt).toLocaleDateString()}):\n\n${link.url}\n\nThis is a voluntary support plan. It does not restrict how you use the money you receive.`)}`}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-white px-3 py-1.5 text-xs font-medium text-indigo-700 transition hover:bg-indigo-50"
+          >
+            <Mail className="h-3.5 w-3.5" /> Email link
+          </a>
+          <a
+            href={`https://wa.me/?text=${encodeURIComponent(`Your FamilyLedger invitation link (valid until ${new Date(link.expiresAt).toLocaleDateString()}): ${link.url}`)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-white px-3 py-1.5 text-xs font-medium text-indigo-700 transition hover:bg-indigo-50"
+          >
+            <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
+          </a>
         </div>
       </div>
     );

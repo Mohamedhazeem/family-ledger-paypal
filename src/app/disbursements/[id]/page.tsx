@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { AcknowledgeButton } from "@/components/disbursements/acknowledge-button";
 import { RefreshPayoutStatusButton } from "@/components/disbursements/refresh-payout-status-button";
 import { CreateInvitationButton } from "@/components/disbursements/create-invitation-button";
+import { PlanResponseWatcher } from "@/components/disbursements/plan-response-watcher";
 import { RevokeInvitationButton } from "@/components/disbursements/revoke-invitation-button";
 import { SendPaymentButton } from "@/components/disbursements/send-payment-button";
 import { DiffCard, TimelineCard, VersionsGrid } from "./detail-sections";
@@ -164,6 +165,7 @@ export default async function DisbursementDetailPage({
           <Card>
             <CardHeader title="Invitations" description="Secure, expiring, revocable links." />
             <CardContent className="space-y-3">
+              <PlanResponseWatcher disbursementId={disbursement.id} />
               <CreateInvitationButton disbursementId={disbursement.id} />
               {invitations.length === 0 ? (
                 <p className="py-4 text-center text-sm text-slate-500">No invitations yet.</p>
