@@ -3,6 +3,7 @@
 import { useEffect, useState, type ComponentType, type ReactNode } from "react";
 import type { AnalyticsSnapshot } from "@/application/ports/analytics";
 import { toStudioSources } from "@/infrastructure/analytics/studio-sources";
+import { buildDefaultDashboardState } from "@/infrastructure/analytics/studio-default-dashboard";
 import { buildGridFallbackModel } from "@/infrastructure/analytics/ag-grid-fallback";
 import { minorToDecimal } from "@/components/disbursements/money-client";
 
@@ -64,6 +65,8 @@ function StudioDashboard({
   licenseKey: string;
 }) {
   const [mod, setMod] = useState<StudioModule | null>(null);
+  // Open on the pre-built board; "Customise" switches to Studio's edit mode.
+  const [mode, setMode] = useState<"view" | "edit">("view");
 
   useEffect(() => {
     let cancelled = false;
@@ -92,10 +95,43 @@ function StudioDashboard({
   const AgStudio = mod.AgStudio;
   return (
     <AgStudioProvider licenseKey={licenseKey}>
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <p className="text-xs text-slate-500">
+          {mode === "view"
+            ? "Pre-built overview of the same aggregates."
+            : "Drag widgets onto the board to make it yours."}
+        </p>
+        <div className="inline-flex rounded-xl border border-slate-200 bg-slate-50 p-1">
+          <button
+            type="button"
+            onClick={() => setMode("view")}
+            aria-pressed={mode === "view"}
+            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+              mode === "view" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
+            }`}
+          >
+            Dashboard
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode("edit")}
+            aria-pressed={mode === "edit"}
+            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+              mode === "edit" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
+            }`}
+          >
+            Customise
+          </button>
+        </div>
+      </div>
       <div className="overflow-hidden rounded-2xl border border-slate-200" style={{ height: 640 }}>
         <AgStudio
           data={{ sources: toStudioSources(snapshot) }}
-          mode="edit"
+          initialState={buildDefaultDashboardState()}
+          mode={mode}
+          // Let the coordinator add filters straight from the view-mode
+          // Filters panel instead of forcing a trip through Customise.
+          enableFilterEditingInViewMode={true}
         />
       </div>
     </AgStudioProvider>

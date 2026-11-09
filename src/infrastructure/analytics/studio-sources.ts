@@ -21,16 +21,18 @@ export function toStudioSources(snapshot: AnalyticsSnapshot): StudioDataSource[]
       })),
     },
     {
+      // Field ids are unique across all sources so widget data mappings can
+      // reference them unambiguously ("status"/"count" would collide).
       id: "plan_status",
-      data: snapshot.byPlanStatus.map((row) => ({ status: row.status, count: row.count })),
+      data: snapshot.byPlanStatus.map((row) => ({ plan_status: row.status, plan_count: row.count })),
     },
     {
       id: "payment_status",
-      data: snapshot.byPaymentStatus.map((row) => ({ status: row.status, count: row.count })),
+      data: snapshot.byPaymentStatus.map((row) => ({ payment_status: row.status, payment_count: row.count })),
     },
     {
       id: "attempt_state",
-      data: snapshot.byAttemptState.map((row) => ({ status: row.status, count: row.count })),
+      data: snapshot.byAttemptState.map((row) => ({ attempt_state: row.status, attempt_count: row.count })),
     },
   ];
 }

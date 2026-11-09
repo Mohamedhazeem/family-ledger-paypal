@@ -93,7 +93,7 @@ export default async function AnalyticsPage() {
             title="Programme workspace"
             description={
               process.env.AG_STUDIO_LICENSE_KEY
-                ? "AG Studio builder over the same aggregates — drag widgets to visualize; data sources connected."
+                ? "AG Studio board over the same aggregates — opens pre-built; switch to Customise to drag in your own widgets."
                 : "AG Grid fallback over the same aggregates (no sponsor licence key configured)."
             }
           />
