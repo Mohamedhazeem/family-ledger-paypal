@@ -10,17 +10,28 @@ export function Navbar() {
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 text-white">
             <Wallet className="h-5 w-5" />
           </span>
-          FamilyLedger
+          Family Ledger
         </Link>
         <nav className="hidden items-center gap-6 text-sm text-slate-600 md:flex">
           <Link href="/#features" className="hover:text-slate-900">Features</Link>
           <Link href="/#how" className="hover:text-slate-900">How it works</Link>
           <Link href="/login" className="hover:text-slate-900">Sign in</Link>
         </nav>
-        <div className="flex items-center gap-2">
-          <Link href="/login" className="hidden text-sm font-medium text-slate-700 sm:block">Sign in</Link>
+        {/*<div className="flex items-center gap-4">
+          <Link href="/login" className="hidden text-sm font-medium text-slate-700 sm:block">
+            <Button size="sm">Sign in
+            </Button>
+          </Link>
           <Link href="/signup">
             <Button size="sm">Get started</Button>
+          </Link>
+        </div>*/}
+        <div className="flex items-center gap-2">
+          <Link href="/login" className="hidden text-sm font-medium text-slate-700 sm:block">
+            <Button variant="outline" size="sm" className="w-26">Sign in</Button>
+          </Link>
+          <Link href="/signup">
+            <Button size="sm" className="w-26">Get started</Button>
           </Link>
         </div>
       </div>

@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 export function Footer() {
   return (
     <footer className="border-t border-slate-200 bg-white">
@@ -9,10 +7,6 @@ export function Footer() {
           <p className="mt-1 text-sm text-slate-500">
             Consent-first, AI-assisted family-support disbursement. Sandbox only, synthetic data.
           </p>
-        </div>
-        <div className="flex gap-6 text-sm text-slate-500">
-          <Link href="/login" className="hover:text-slate-900">Sign in</Link>
-          <Link href="/signup" className="hover:text-slate-900">Sign up</Link>
         </div>
       </div>
     </footer>
