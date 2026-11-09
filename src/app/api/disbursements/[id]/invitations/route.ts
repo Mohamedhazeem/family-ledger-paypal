@@ -7,10 +7,12 @@ import {
   DisbursementNotFoundError,
 } from "@/application/use-cases/create-invitation";
 import {
+  PrismaBeneficiaryRepository,
   PrismaDisbursementRepository,
   PrismaLedgerEventRepository,
   PrismaRecipientInvitationRepository,
 } from "@/infrastructure/db/repositories";
+import { createEmailAdapter } from "@/infrastructure/email/factory";
 import { requireSession } from "@/lib/auth/session";
 import { withSecurityHeaders } from "@/lib/security/headers";
 import { isSameOrigin } from "@/lib/security/csrf";
@@ -34,14 +36,40 @@ export async function POST(
   }
   const { id } = await context.params;
   try {
+    const disbursements = new PrismaDisbursementRepository();
     const result = await new CreateInvitation(
-      new PrismaDisbursementRepository(),
+      disbursements,
       new PrismaRecipientInvitationRepository(),
       new PrismaLedgerEventRepository(),
     ).execute({ coordinatorId: session.user.id, disbursementId: id });
+
+    const url = `${env.APP_URL.replace(/\/$/, "")}/beneficiary/${result.token}`;
+    // Best-effort automatic delivery. With EMAIL_PROVIDER=noop (default)
+    // this is a no-op; the coordinator still gets the copyable link.
+    // Failures never block invitation creation.
+    try {
+      const disbursement = await disbursements.findById(id);
+      if (disbursement) {
+        const beneficiary = await new PrismaBeneficiaryRepository().findById(disbursement.beneficiaryId);
+        if (beneficiary?.invitationEmail) {
+          await createEmailAdapter().send({
+            to: beneficiary.invitationEmail,
+            subject: "You received a family support payment plan",
+            text:
+              `Hello ${beneficiary.displayName},\n\n` +
+              `A support plan has been shared with you by ${"your programme"}.\n\n` +
+              `Review it here (link valid until ${result.expiresAt.toLocaleDateString()}):\n${url}\n\n` +
+              "This is a voluntary support plan. It does not restrict how you use the money you receive.",
+          });
+        }
+      }
+    } catch {
+      // Email delivery is best-effort; the copyable link remains available.
+    }
+
     return withSecurityHeaders(NextResponse.json(
       {
-        url: `${env.APP_URL.replace(/\/$/, "")}/beneficiary/${result.token}`,
+        url,
         expiresAt: result.expiresAt.toISOString(),
       },
       { status: 201 },

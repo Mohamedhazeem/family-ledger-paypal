@@ -21,8 +21,12 @@ describe("NoopEmailAdapter", () => {
     delete process.env.EMAIL_PROVIDER;
     try {
       expect(createEmailAdapter()).toBeInstanceOf(NoopEmailAdapter);
-      process.env.EMAIL_PROVIDER = "resend";
+      process.env.EMAIL_PROVIDER = "definitely-unknown";
       expect(() => createEmailAdapter()).toThrow(/Unsupported EMAIL_PROVIDER/);
+      // resend is supported but requires a key.
+      process.env.EMAIL_PROVIDER = "resend";
+      delete process.env.RESEND_API_KEY;
+      expect(() => createEmailAdapter()).toThrow(/RESEND_API_KEY/);
     } finally {
       if (old === undefined) delete process.env.EMAIL_PROVIDER;
       else process.env.EMAIL_PROVIDER = old;
