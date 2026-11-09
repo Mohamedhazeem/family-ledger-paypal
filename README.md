@@ -1,4 +1,4 @@
-# FamilyLedger 2.0
+# FamilyLedger
 
 > **Make the support plan clear before the money moves.**
 
