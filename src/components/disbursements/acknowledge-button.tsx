@@ -8,9 +8,17 @@ import { Button } from "@/components/ui/button";
  * AcknowledgeButton (Slice 3.7): records the coordinator's
  * acknowledgement of the plan (spec §6 Step 7).
  */
-export function AcknowledgeButton({ disbursementId }: { disbursementId: string }) {
+export function AcknowledgeButton({
+  disbursementId,
+  alreadyAcknowledged = false,
+}: {
+  disbursementId: string;
+  alreadyAcknowledged?: boolean;
+}) {
   const router = useRouter();
-  const [state, setState] = useState<"idle" | "sending" | "done" | "error">("idle");
+  const [state, setState] = useState<"idle" | "sending" | "done" | "error">(
+    alreadyAcknowledged ? "done" : "idle",
+  );
 
   async function acknowledge() {
     setState("sending");

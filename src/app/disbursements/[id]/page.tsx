@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { AcknowledgeButton } from "@/components/disbursements/acknowledge-button";
 import { RefreshPayoutStatusButton } from "@/components/disbursements/refresh-payout-status-button";
+import { CreateInvitationButton } from "@/components/disbursements/create-invitation-button";
 import { RevokeInvitationButton } from "@/components/disbursements/revoke-invitation-button";
 import { SendPaymentButton } from "@/components/disbursements/send-payment-button";
 import { DiffCard, TimelineCard, VersionsGrid } from "./detail-sections";
@@ -80,7 +81,7 @@ export default async function DisbursementDetailPage({
               <Badge tone={toneForStatus(disbursement.paymentStatus)}>{formatStatusLabel(disbursement.paymentStatus)}</Badge>
               {disbursement.paymentMode === "MOCK" ? <Badge tone="warning">MOCK PAYMENT</Badge> : null}
             </div>
-            <div className="mt-5 grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+            <div className="mt-5 grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
               <div>
                 <h1 className="break-all font-mono text-2xl font-bold tracking-tight sm:text-3xl">
                   {disbursement.publicReference}
@@ -144,7 +145,10 @@ export default async function DisbursementDetailPage({
             <CardContent className="space-y-6 pt-5">
               <div className="space-y-2">
                 <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Acknowledge plan</p>
-                <AcknowledgeButton disbursementId={disbursement.id} />
+                <AcknowledgeButton
+                  disbursementId={disbursement.id}
+                  alreadyAcknowledged={disbursement.planStatus === "COORDINATOR_ACKNOWLEDGED"}
+                />
               </div>
               <div className="space-y-2">
                 <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Send payment</p>
@@ -159,7 +163,8 @@ export default async function DisbursementDetailPage({
 
           <Card>
             <CardHeader title="Invitations" description="Secure, expiring, revocable links." />
-            <CardContent>
+            <CardContent className="space-y-3">
+              <CreateInvitationButton disbursementId={disbursement.id} />
               {invitations.length === 0 ? (
                 <p className="py-4 text-center text-sm text-slate-500">No invitations yet.</p>
               ) : (
@@ -168,6 +173,10 @@ export default async function DisbursementDetailPage({
                     // eslint-disable-next-line react-hooks/purity -- server render, evaluated once per request
                     const expired = invitation.expiresAt.getTime() <= Date.now();
                     const status = invitation.revokedAt ? "Revoked" : expired ? "Expired" : "Active";
+                    // Link status ≠ plan decision: acceptance lives in planStatus, not on the invitation.
+                    const beneficiaryAccepted =
+                      disbursement.planStatus === "BENEFICIARY_ACCEPTED" || disbursement.planStatus === "COORDINATOR_ACKNOWLEDGED";
+                    const label = status === "Active" && beneficiaryAccepted ? "Active · Accepted" : status;
                     return (
                       <li key={invitation.id} className="rounded-2xl border border-slate-200 bg-slate-50/60 p-3">
                         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -175,14 +184,19 @@ export default async function DisbursementDetailPage({
                             <Link2 className="h-4 w-4 text-slate-400" />
                             Invitation ·{" "}
                             <span className={`font-semibold ${status === "Active" ? "text-emerald-700" : status === "Revoked" ? "text-rose-600" : "text-amber-600"}`}>
-                              {status}
+                              {label}
                             </span>
                           </span>
                           {status === "Active" ? (
                             <RevokeInvitationButton disbursementId={disbursement.id} invitationId={invitation.id} />
                           ) : null}
                         </div>
-                        <p className="mt-1 text-xs text-slate-500">Expires {invitation.expiresAt.toLocaleDateString()}</p>
+                        <p className="mt-1 text-xs text-slate-500">
+                          Expires {invitation.expiresAt.toLocaleDateString()}
+                          {invitation.lastViewedAt ? (
+                            <> · Viewed {invitation.lastViewedAt.toLocaleDateString()}</>
+                          ) : null}
+                        </p>
                       </li>
                     );
                   })}

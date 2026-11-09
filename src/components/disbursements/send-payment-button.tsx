@@ -42,7 +42,7 @@ export function SendPaymentButton({ disbursementId }: { disbursementId: string }
         disabled={state === "sending" || state === "done"}
         className="w-full"
       >
-        {state === "sending" ? "Sending…" : "Send full payment via PayPal Sandbox"}
+        {state === "sending" ? "Sending…" : "Send full payment"}
       </Button>
       {message ? (
         <p className={`text-xs ${state === "error" ? "text-rose-600" : "text-slate-500"}`}>{message}</p>
