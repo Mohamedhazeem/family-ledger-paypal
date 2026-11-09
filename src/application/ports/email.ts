@@ -9,6 +9,17 @@ export interface EmailMessage {
   to: string;
   subject: string;
   text: string;
+  /** Optional HTML body. When provided, Resend sends a multipart message. */
+  html?: string;
+  /**
+   * Optional Resend template reference. When provided, Resend renders the
+   * published template and `html`/`text` must be omitted (Resend rejects
+   * mixed payloads).
+   */
+  template?: {
+    id: string;
+    variables?: Record<string, string | number | boolean>;
+  };
 }
 
 export interface EmailResult {

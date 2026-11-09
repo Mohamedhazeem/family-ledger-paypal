@@ -10,9 +10,11 @@ import {
   PrismaBeneficiaryRepository,
   PrismaDisbursementRepository,
   PrismaLedgerEventRepository,
+  PrismaOrganizationRepository,
   PrismaRecipientInvitationRepository,
 } from "@/infrastructure/db/repositories";
 import { createEmailAdapter } from "@/infrastructure/email/factory";
+import { buildInvitationEmail } from "@/infrastructure/email/invitation-template";
 import { requireSession } from "@/lib/auth/session";
 import { withSecurityHeaders } from "@/lib/security/headers";
 import { isSameOrigin } from "@/lib/security/csrf";
@@ -51,16 +53,40 @@ export async function POST(
       const disbursement = await disbursements.findById(id);
       if (disbursement) {
         const beneficiary = await new PrismaBeneficiaryRepository().findById(disbursement.beneficiaryId);
+        const organization = await new PrismaOrganizationRepository().findById(disbursement.organizationId);
         if (beneficiary?.invitationEmail) {
-          await createEmailAdapter().send({
-            to: beneficiary.invitationEmail,
-            subject: "You received a family support payment plan",
-            text:
-              `Hello ${beneficiary.displayName},\n\n` +
-              `A support plan has been shared with you by ${"your programme"}.\n\n` +
-              `Review it here (link valid until ${result.expiresAt.toLocaleDateString()}):\n${url}\n\n` +
-              "This is a voluntary support plan. It does not restrict how you use the money you receive.",
-          });
+          const templateId = process.env.RESEND_TEMPLATE_ID;
+          if (templateId) {
+            // Use a published Resend template (managed in the Resend
+            // dashboard/API) with variables substituted server-side.
+            await createEmailAdapter().send({
+              to: beneficiary.invitationEmail,
+              subject: `${organization?.name ?? "FamilyLedger"} shared a support plan with you`,
+              text: url,
+              template: {
+                id: templateId,
+                variables: {
+                  BENEFICIARY_NAME: beneficiary.displayName,
+                  PROGRAMME_NAME: organization?.name ?? "FamilyLedger",
+                  INVITATION_URL: url,
+                  EXPIRY_DATE: result.expiresAt.toLocaleDateString(),
+                },
+              },
+            });
+          } else {
+            const email = buildInvitationEmail({
+              beneficiaryDisplayName: beneficiary.displayName,
+              programmeName: organization?.name ?? "FamilyLedger",
+              url,
+              expiresAt: result.expiresAt,
+            });
+            await createEmailAdapter().send({
+              to: beneficiary.invitationEmail,
+              subject: email.subject,
+              text: email.text,
+              html: email.html,
+            });
+          }
         }
       }
     } catch {
