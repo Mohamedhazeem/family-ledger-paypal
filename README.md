@@ -255,6 +255,9 @@ Full list lives in `.env.example` (template — never commit real values).
 | `PAYPAL_CLIENT_SECRET`  | yes      | PayPal sandbox app secret                                                                                          |
 | `PAYPAL_WEBHOOK_ID`     | optional | Webhook verification id (stretch feature)                                                                          |
 | `AG_STUDIO_LICENSE_KEY` | optional | Enables AG Studio analytics; otherwise a labelled AG Grid fallback renders                                         |
+| `EMAIL_PROVIDER`        | optional | Email provider id (e.g. `noop`, `resend`); defaults to noop so invitation links work without email                 |
+| `RESEND_API_KEY`        | optional | Resend API key (only if `EMAIL_PROVIDER=resend`)                                                                   |
+| `RESEND_FROM`           | optional | Verified sender email for Resend (only if `EMAIL_PROVIDER=resend`)                                                 |
 | `DEMO_MODE`             | yes      | Demo-labelling flag (e.g. `true`)                                                                                  |
 | `PORT`                  | optional | Injected by Render; not needed locally                                                                             |
 
@@ -286,7 +289,6 @@ scope granted — step-by-step in [`docs/paypal-sandbox.md`](docs/paypal-sandbox
 - [`docs/deploy-runbook.md`](docs/deploy-runbook.md) — Render deploy, migrations, rollback
 - [`docs/verification-log.md`](docs/verification-log.md) — command → outcome per slice
 - [`docs/demo-script.md`](docs/demo-script.md) — 3-minute talk track
-- [`docs/repo-page.md`](docs/repo-page.md) — GitHub About description, topics, apply/verify runbook
 - [`docs/implementation-plan.md`](docs/implementation-plan.md) — build checklist
 - [`docs/postman/family-ledger.postman_collection.json`](docs/postman/family-ledger.postman_collection.json) + environment template — API-verifiable payout flow (sandbox)
 - [`AGENTS.md`](AGENTS.md) — contributor rules; [`FamilyLedger_Spec_and_Build_Plan.md`](FamilyLedger_Spec_and_Build_Plan.md) — full spec (single source of truth)
