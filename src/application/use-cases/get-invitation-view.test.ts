@@ -38,6 +38,7 @@ function makeDeps() {
       currency: "USD",
       supportNote: "note",
       shareSupportNoteWithBeneficiary: false,
+      deletedAt: null,
     }),
   };
   const beneficiaries = { findById: async () => ({ displayName: "Maria", preferredLanguage: "en" }) };

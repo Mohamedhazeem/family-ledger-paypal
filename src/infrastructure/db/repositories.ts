@@ -106,7 +106,7 @@ export class PrismaDisbursementRepository implements DisbursementRepository {
 
   async claimForSubmission(id: string): Promise<boolean> {
     const result = await prisma.disbursement.updateMany({
-      where: { id, paymentStatus: { in: ["NOT_SENT", "READY", "FAILED"] } },
+      where: { id, deletedAt: null, paymentStatus: { in: ["NOT_SENT", "READY", "FAILED"] } },
       data: { paymentStatus: "SUBMITTING" },
     });
     return result.count === 1;
@@ -121,6 +121,10 @@ export class PrismaDisbursementRepository implements DisbursementRepository {
     }>,
   ): Promise<DisbursementRecord> {
     return prisma.disbursement.update({ where: { id }, data });
+  }
+
+  async softDelete(id: string, deletedAt: Date): Promise<DisbursementRecord> {
+    return prisma.disbursement.update({ where: { id }, data: { deletedAt } });
   }
 }
 

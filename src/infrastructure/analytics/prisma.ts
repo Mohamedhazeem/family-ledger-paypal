@@ -15,7 +15,7 @@ import { prisma } from "@/infrastructure/db/prisma";
 export class PrismaAnalyticsAdapter implements AnalyticsPort {
   async getAggregates(organizationId: string): Promise<AnalyticsSnapshot> {
     const disbursements = await prisma.disbursement.findMany({
-      where: { organizationId },
+      where: { organizationId, deletedAt: null },
       select: {
         amountMinor: true,
         planStatus: true,

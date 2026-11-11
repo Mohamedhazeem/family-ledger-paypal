@@ -125,6 +125,10 @@ model Disbursement {
   paypalBatchStatus               String?
   paypalItemStatus                String?
   paymentMode                     PaymentMode   @default(SANDBOX)
+  // Soft delete (ADR-0018): drafts that were never sent can be discarded.
+  // Rows are never hard-deleted so the append-only LedgerEvent history
+  // (ADR-0009) and all payment/plan audit data survive.
+  deletedAt                       DateTime?
   planVersions                    PlanVersion[]
   ledgerEvents                    LedgerEvent[]
   recipientInvitations            RecipientInvitation[]

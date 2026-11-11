@@ -11,9 +11,10 @@ import { formatStatusLabel, toneForStatus } from "@/app/dashboard/disbursement-f
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { AcknowledgeButton } from "@/components/disbursements/acknowledge-button";
-import { RefreshPayoutStatusButton } from "@/components/disbursements/refresh-payout-status-button";
 import { CreateInvitationButton } from "@/components/disbursements/create-invitation-button";
+import { DeleteDraftButton } from "@/components/disbursements/delete-draft-button";
 import { PlanResponseWatcher } from "@/components/disbursements/plan-response-watcher";
+import { RefreshPayoutStatusButton } from "@/components/disbursements/refresh-payout-status-button";
 import { RevokeInvitationButton } from "@/components/disbursements/revoke-invitation-button";
 import { SendPaymentButton } from "@/components/disbursements/send-payment-button";
 import { DiffCard, TimelineCard, VersionsGrid } from "./detail-sections";
@@ -39,7 +40,11 @@ export default async function DisbursementDetailPage({
     where: { id },
     include: { beneficiary: true },
   });
-  if (!disbursement || disbursement.coordinatorId !== session.user.id) {
+  if (
+    !disbursement ||
+    disbursement.deletedAt !== null ||
+    disbursement.coordinatorId !== session.user.id
+  ) {
     notFound();
   }
 
@@ -159,6 +164,12 @@ export default async function DisbursementDetailPage({
                 <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
                 One full sandbox payout with an explicit confirmation. Beneficiary consent never gates payment.
               </p>
+              {disbursement.paymentStatus === "NOT_SENT" ? (
+                <div className="space-y-2 border-t border-slate-100 pt-4">
+                  <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Danger zone</p>
+                  <DeleteDraftButton disbursementId={disbursement.id} />
+                </div>
+              ) : null}
             </CardContent>
           </Card>
 

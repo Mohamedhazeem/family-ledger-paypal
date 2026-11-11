@@ -94,6 +94,9 @@ export class SubmitPayout {
     if (disbursement.coordinatorId !== input.coordinatorId) {
       throw new CoordinatorMismatchError("Not your disbursement.");
     }
+    if (disbursement.deletedAt !== null) {
+      throw new DisbursementNotFoundError("Disbursement not found.");
+    }
 
     // Retry path (spec §11): a STATUS_UNKNOWN outcome means the
     // previous call may or may not have landed. Re-POST with the

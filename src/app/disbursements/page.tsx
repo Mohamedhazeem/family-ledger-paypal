@@ -17,6 +17,7 @@ export default async function DisbursementsPage() {
   if (!session) notFound();
 
   const rows = await prisma.disbursement.findMany({
+    where: { deletedAt: null },
     include: { beneficiary: true },
     orderBy: { createdAt: "desc" },
   });

@@ -2,8 +2,20 @@ import "server-only";
 import { NextResponse } from "next/server";
 import { prisma } from "@/infrastructure/db/prisma";
 import { visibleTimeline } from "@/domain/timeline";
+import {
+  CoordinatorMismatchError,
+  DeleteDisbursement,
+  DisbursementNotFoundError,
+  NotDeletableError,
+} from "@/application/use-cases/delete-disbursement";
+import {
+  PrismaDisbursementRepository,
+  PrismaLedgerEventRepository,
+  PrismaRecipientInvitationRepository,
+} from "@/infrastructure/db/repositories";
 import { requireSession } from "@/lib/auth/session";
 import { withSecurityHeaders } from "@/lib/security/headers";
+import { isSameOrigin } from "@/lib/security/csrf";
 
 /**
  * GET /api/disbursements/[id] (spec §8): coordinator-only detail —
@@ -24,7 +36,7 @@ export async function GET(
     where: { id },
     include: { beneficiary: true },
   });
-  if (!disbursement || disbursement.coordinatorId !== session.user.id) {
+  if (!disbursement || disbursement.deletedAt !== null || disbursement.coordinatorId !== session.user.id) {
     return withSecurityHeaders(NextResponse.json({ error: "Disbursement not found" }, { status: 404 }));
   }
   const versions = await prisma.planVersion.findMany({
@@ -93,4 +105,53 @@ export async function GET(
       ),
     ),
   );
+}
+
+/**
+ * DELETE /api/disbursements/[id] (ADR-0018): soft-delete a draft that was
+ * never sent. Coordinator-only. The row is kept so the append-only
+ * LedgerEvent history survives; active invitations are revoked first.
+ */
+export async function DELETE(
+  request: Request,
+  context: { params: Promise<{ id: string }> },
+) {
+  const session = await requireSession();
+  if (!isSameOrigin(request)) {
+    return withSecurityHeaders(NextResponse.json({ error: "Cross-origin request rejected." }, { status: 403 }));
+  }
+  if (!session) {
+    return withSecurityHeaders(NextResponse.json({ error: "Unauthorized" }, { status: 401 }));
+  }
+  const { id } = await context.params;
+  try {
+    const result = await new DeleteDisbursement(
+      new PrismaDisbursementRepository(),
+      new PrismaRecipientInvitationRepository(),
+      new PrismaLedgerEventRepository(),
+    ).execute({ coordinatorId: session.user.id, disbursementId: id });
+    return withSecurityHeaders(
+      NextResponse.json({
+        id: result.id,
+        publicReference: result.publicReference,
+        deletedAt: result.deletedAt.toISOString(),
+      }),
+    );
+  } catch (error) {
+    if (error instanceof DisbursementNotFoundError) {
+      return withSecurityHeaders(NextResponse.json({ error: error.message }, { status: 404 }));
+    }
+    if (error instanceof CoordinatorMismatchError) {
+      return withSecurityHeaders(NextResponse.json({ error: error.message }, { status: 403 }));
+    }
+    if (error instanceof NotDeletableError) {
+      return withSecurityHeaders(NextResponse.json({ error: error.message }, { status: 409 }));
+    }
+    return withSecurityHeaders(
+      NextResponse.json(
+        { error: error instanceof Error ? error.message : "Could not delete the disbursement" },
+        { status: 500 },
+      ),
+    );
+  }
 }

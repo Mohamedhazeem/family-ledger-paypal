@@ -21,6 +21,7 @@ Index of Architecture Decision Records. Each ADR is self-contained and traces to
 | ADR-0015 | Env-only secrets | Accepted | Part C §13, §24 |
 | ADR-0016 | Ports-and-Adapters for all third parties | Accepted | Part C §7 |
 | ADR-0017 | Clean Architecture: Entities, Use Cases, Ports, Adapters, Frameworks | Accepted | Part C §7–§8 |
+| ADR-0018 | Soft delete for never-sent drafts | Accepted | Part C §9, §13 |
 
 ## How to add a new ADR
 

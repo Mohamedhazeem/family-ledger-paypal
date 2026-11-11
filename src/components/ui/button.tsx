@@ -1,6 +1,6 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 
-type Variant = "primary" | "secondary" | "ghost" | "outline";
+type Variant = "primary" | "secondary" | "ghost" | "outline" | "danger";
 type Size = "sm" | "md" | "lg";
 
 const variantClasses: Record<Variant, string> = {
@@ -8,6 +8,7 @@ const variantClasses: Record<Variant, string> = {
   secondary: "bg-slate-900 text-white hover:bg-slate-800 shadow-sm",
   ghost: "bg-transparent text-slate-700 hover:bg-slate-100",
   outline: "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50",
+  danger: "bg-rose-600 text-white hover:bg-rose-700 shadow-sm",
 };
 
 const sizeClasses: Record<Size, string> = {

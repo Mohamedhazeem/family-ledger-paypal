@@ -28,6 +28,7 @@ function makeDisbursement(overrides: Partial<DisbursementState> = {}): Disbursem
     paypalBatchStatus: "PENDING",
     paypalItemStatus: "PENDING",
     paymentMode: "SANDBOX",
+    deletedAt: null,
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,

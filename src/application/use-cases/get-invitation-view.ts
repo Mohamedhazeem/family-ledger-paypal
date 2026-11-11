@@ -70,7 +70,7 @@ export class GetInvitationView {
       throw new InvitationNotFoundError("This invitation link is not valid.");
     }
     const disbursement = await this.disbursements.findById(invitation.disbursementId);
-    if (!disbursement) {
+    if (!disbursement || disbursement.deletedAt !== null) {
       throw new InvitationNotFoundError("This invitation link is not valid.");
     }
     const organization = await this.organizations.findById(disbursement.organizationId);

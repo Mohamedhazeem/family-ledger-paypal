@@ -65,6 +65,7 @@ function stubRepos() {
     updatePaymentStatus: async () => { throw new Error("unused"); },
     claimForSubmission: async () => { throw new Error("unused"); },
     updatePayoutFields: async () => { throw new Error("unused"); },
+    softDelete: async () => { throw new Error("unused"); },
   };
   const plans = {
     create: async (input: unknown) => {

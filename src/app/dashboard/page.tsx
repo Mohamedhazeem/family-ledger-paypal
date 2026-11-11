@@ -17,6 +17,7 @@ const STAT_TONES = [
 
 export default async function DashboardPage() {
   const rows = await prisma.disbursement.findMany({
+    where: { deletedAt: null },
     include: { beneficiary: true },
     orderBy: { createdAt: "desc" },
   });
