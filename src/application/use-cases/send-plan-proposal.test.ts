@@ -92,7 +92,7 @@ function fakeCreateInvitation(calls: number[]) {
 function makeUseCase(
   deps: ReturnType<typeof stubDeps>,
   invitationCalls: number[],
-  email?: { data?: PlanProposalEmailData; result?: { delivered: boolean; provider: string } },
+  email?: { data?: PlanProposalEmailData; result?: { delivered: boolean; provider: string; error?: string } },
 ) {
   const sent: PlanProposalEmailData[] = [];
   const emailPort: EmailPort = {
@@ -193,5 +193,18 @@ describe("SendPlanProposal", () => {
 
     await expect(useCase.execute(INPUT)).rejects.toThrow(/create a plan/i);
     expect(calls).toHaveLength(0);
+  });
+
+  it("surfaces the provider error when delivery fails", async () => {
+    const deps = stubDeps(makeDisbursement(), VERSION);
+    const { useCase } = makeUseCase(deps, [], {
+      result: { delivered: false, provider: "resend", error: "Invalid `to` field." },
+    });
+
+    const result = await useCase.execute(INPUT);
+
+    expect(result.delivered).toBe(false);
+    expect(result.provider).toBe("resend");
+    expect(result.error).toBe("Invalid `to` field.");
   });
 });

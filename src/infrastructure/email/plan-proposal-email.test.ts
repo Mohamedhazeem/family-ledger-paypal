@@ -66,11 +66,36 @@ describe("ResendEmailAdapter.sendPlanProposal", () => {
     expect(String(captured!.text)).toContain("$300.00");
   });
 
-  it("returns delivered:false on a provider error", async () => {
+  it("returns delivered:false with a redacted provider reason", async () => {
+    server.use(
+      http.post("https://api.resend.com/emails", () =>
+        HttpResponse.json(
+          {
+            message: "Invalid `to` field for maria.santos@example.com.",
+            name: "validation_error",
+            statusCode: 422,
+          },
+          { status: 422 },
+        ),
+      ),
+    );
+    const result = await new ResendEmailAdapter("re_test_key", "from@example.com").sendPlanProposal(DATA);
+    expect(result.delivered).toBe(false);
+    expect(result.provider).toBe("resend");
+    expect(result.error).toBeTruthy();
+    expect(result.error).not.toContain("maria.santos@example.com");
+    expect(result.error).toContain("[redacted]");
+  });
+
+  it("returns delivered:false on a provider error with no body", async () => {
     server.use(
       http.post("https://api.resend.com/emails", () => new HttpResponse(null, { status: 500 })),
     );
     const result = await new ResendEmailAdapter("re_test_key", "from@example.com").sendPlanProposal(DATA);
-    expect(result).toEqual({ delivered: false, provider: "resend" });
+    expect(result).toEqual({
+      delivered: false,
+      provider: "resend",
+      error: "Resend rejected the request.",
+    });
   });
 });

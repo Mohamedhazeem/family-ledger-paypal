@@ -14,6 +14,23 @@ import { buildPlanProposalEmail } from "./plan-proposal-template";
  * delivered:false rather than thrown, so invitation creation never
  * breaks because of an email outage.
  */
+/**
+ * Extract a short, non-sensitive reason from a provider error body.
+ * Email addresses are redacted so PII never reaches the UI or logs.
+ */
+function safeError(raw: string): string {
+  const redacted = raw.replace(/[^\s"'<>@]+@[^\s"'<>@]+\.[^\s"'<>@]+/g, "[redacted]");
+  try {
+    const parsed = JSON.parse(redacted) as { message?: unknown };
+    if (typeof parsed.message === "string" && parsed.message.length > 0) {
+      return parsed.message.slice(0, 200);
+    }
+  } catch {
+    // Not JSON — fall through to the raw text.
+  }
+  return redacted.slice(0, 200).trim() || "Resend rejected the request.";
+}
+
 export class ResendEmailAdapter implements EmailPort {
   private readonly apiKey: string;
   private readonly from: string;
@@ -45,11 +62,15 @@ export class ResendEmailAdapter implements EmailPort {
         body: JSON.stringify(body),
       });
       if (!res.ok) {
-        return { delivered: false, provider: "resend" };
+        return {
+          delivered: false,
+          provider: "resend",
+          error: safeError(await res.text().catch(() => "")),
+        };
       }
       return { delivered: true, provider: "resend" };
     } catch {
-      return { delivered: false, provider: "resend" };
+      return { delivered: false, provider: "resend", error: "Could not reach Resend." };
     }
   }
 

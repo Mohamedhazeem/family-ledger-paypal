@@ -24,6 +24,8 @@ export interface PlanProposalSent {
   expiresAt: Date;
   delivered: boolean;
   provider: string;
+  /** Present when delivered is false and a provider supplied a reason. */
+  error?: string;
   planVersionNumber: number;
 }
 
@@ -124,6 +126,7 @@ export class SendPlanProposal {
       expiresAt: invitation.expiresAt,
       delivered: delivery.delivered,
       provider: delivery.provider,
+      error: delivery.error,
       planVersionNumber: version.versionNumber,
     };
   }

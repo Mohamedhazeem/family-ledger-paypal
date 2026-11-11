@@ -27,6 +27,11 @@ export interface EmailResult {
   delivered: boolean;
   /** Provider identifier recorded in logs (never keys or content). */
   provider: string;
+  /**
+   * Short provider-supplied reason when `delivered` is false (email
+   * addresses redacted). Absent for the noop adapter and on success.
+   */
+  error?: string;
 }
 
 /** One proposed category line in the plan-proposal email. */

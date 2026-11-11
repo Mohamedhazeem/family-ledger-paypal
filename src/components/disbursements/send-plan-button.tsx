@@ -24,10 +24,12 @@ export function SendPlanButton({
   const [state, setState] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [link, setLink] = useState<{ url: string; expiresAt: string } | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [detail, setDetail] = useState<string | null>(null);
 
   async function send() {
     setState("sending");
     setMessage(null);
+    setDetail(null);
     try {
       const res = await fetch(`/api/disbursements/${disbursementId}/send-plan`, { method: "POST" });
       const data = await res.json();
@@ -36,8 +38,11 @@ export function SendPlanButton({
       setMessage(
         data.delivered
           ? `Sent to ${beneficiaryEmail} via ${data.provider}.`
-          : "Email not configured — copy the link to share it manually.",
+          : data.provider === "noop"
+            ? "Email not configured — copy the link to share it manually."
+            : `Delivery failed via ${data.provider} — copy the link to share it manually.`,
       );
+      setDetail(data.error ?? null);
       setState("sent");
       router.refresh();
     } catch (error) {
@@ -53,6 +58,7 @@ export function SendPlanButton({
           <CheckCircle2 className="h-4 w-4" /> Plan sent
         </p>
         <p className="text-sm text-emerald-800">{message}</p>
+        {detail ? <p className="text-xs text-rose-600">{detail}</p> : null}
         <ShareLinkButtons url={link.url} expiresAt={link.expiresAt} />
       </div>
     );

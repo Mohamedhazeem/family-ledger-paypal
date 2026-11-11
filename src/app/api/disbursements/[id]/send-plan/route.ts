@@ -67,8 +67,9 @@ export async function POST(
         planVersionNumber: result.planVersionNumber,
         delivered: result.delivered,
         provider: result.provider,
+        error: result.error,
       },
-      "Plan proposal sent",
+      result.delivered ? "Plan proposal sent" : "Plan proposal delivery failed",
     );
 
     return withSecurityHeaders(
@@ -77,6 +78,7 @@ export async function POST(
         expiresAt: result.expiresAt.toISOString(),
         delivered: result.delivered,
         provider: result.provider,
+        error: result.error,
         planVersionNumber: result.planVersionNumber,
       }),
     );
