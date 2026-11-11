@@ -135,7 +135,7 @@ export function TimelineCard({ timeline }: { timeline: TimelineEntry[] }) {
           <ol className="relative space-y-5 border-l-2 border-slate-100 pl-5">
             {timeline.map((entry, index) => (
               <li key={`${entry.eventType}-${index}`} className="relative">
-                <span className="absolute -left-[27px] top-1 h-3 w-3 rounded-full border-2 border-white bg-indigo-500 shadow" />
+                <span className="absolute -left-6.75 top-1 h-3 w-3 rounded-full border-2 border-white bg-indigo-500 shadow" />
                 <p className="text-sm font-medium leading-snug text-slate-700">{entry.label}</p>
                 <time className="mt-1 block text-xs tabular-nums text-slate-400">
                   {entry.createdAt.toLocaleString()}

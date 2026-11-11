@@ -178,7 +178,7 @@ export function NewDisbursementForm() {
     <form onSubmit={save} className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]" noValidate>
       <div className="space-y-6">
         <section aria-labelledby="new-step-1" className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-          <div className="flex items-center gap-3 border-b border-slate-100 bg-gradient-to-r from-indigo-50/80 to-white px-5 py-4 sm:px-6">
+          <div className="flex items-center gap-3 border-b border-slate-100 bg-linear-to-r from-indigo-50/80 to-white px-5 py-4 sm:px-6">
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-indigo-600 text-sm font-bold text-white shadow-sm">1</span>
             <div className="min-w-0">
               <h2 id="new-step-1" className="text-base font-semibold text-slate-900">Beneficiary and payment</h2>
@@ -231,7 +231,7 @@ export function NewDisbursementForm() {
         </section>
 
         <section aria-labelledby="new-step-2" className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-          <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 bg-gradient-to-r from-emerald-50/80 to-white px-5 py-4 sm:px-6">
+          <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 bg-linear-to-r from-emerald-50/80 to-white px-5 py-4 sm:px-6">
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-emerald-600 text-sm font-bold text-white shadow-sm">2</span>
             <div className="min-w-0 flex-1">
               <h2 id="new-step-2" className="text-base font-semibold text-slate-900">Shared allocation plan</h2>

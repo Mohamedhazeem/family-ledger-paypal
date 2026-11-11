@@ -39,19 +39,27 @@ export function DeleteDraftButton({ disbursementId }: { disbursementId: string }
           Delete this draft? The record is kept for audit, but it disappears from the register and
           its invitation links stop working.
         </p>
-        <div className="flex gap-2">
-          <Button type="button" variant="outline" size="sm" onClick={() => setState("idle")}>
+        <div className="flex w-full max-w-xs items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="flex-1 justify-center"
+            onClick={() => setState("idle")}
+          >
             Cancel
           </Button>
+
           <Button
             type="button"
             variant="danger"
             size="sm"
+            className="flex-1 inline-flex items-center justify-center gap-2"
             onClick={doDelete}
             disabled={deleting}
           >
-            <Trash2 className="h-4 w-4" />
-            {deleting ? "Deleting…" : "Confirm delete"}
+            <Trash2 className="h-4 w-4 shrink-0" />
+            <span>{deleting ? "Deleting…" : "Delete"}</span>
           </Button>
         </div>
       </div>
@@ -60,7 +68,7 @@ export function DeleteDraftButton({ disbursementId }: { disbursementId: string }
 
   return (
     <div className="space-y-2">
-      <Button type="button" variant="outline" size="sm" onClick={() => setState("confirm")}>
+      <Button type="button" variant="primary" className="bg-red-500 w-full" size="sm"  onClick={() => setState("confirm")}>
         <Trash2 className="h-4 w-4" /> Delete draft
       </Button>
       {error ? <p className="text-xs text-rose-600">{error}</p> : null}
