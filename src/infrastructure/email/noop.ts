@@ -1,5 +1,10 @@
 import "server-only";
-import type { EmailMessage, EmailPort, EmailResult } from "@/application/ports/email";
+import type {
+  EmailMessage,
+  EmailPort,
+  EmailResult,
+  PlanProposalEmailData,
+} from "@/application/ports/email";
 
 /**
  * Noop email adapter (spec §6 Step 4): invitations are delivered via
@@ -9,6 +14,11 @@ import type { EmailMessage, EmailPort, EmailResult } from "@/application/ports/e
 export class NoopEmailAdapter implements EmailPort {
   async send(_message: EmailMessage): Promise<EmailResult> {
     void _message;
+    return { delivered: false, provider: "noop" };
+  }
+
+  async sendPlanProposal(_data: PlanProposalEmailData): Promise<EmailResult> {
+    void _data;
     return { delivered: false, provider: "noop" };
   }
 }

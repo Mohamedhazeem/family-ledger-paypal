@@ -34,13 +34,19 @@ plan. FamilyLedger records the plan and the payment as two separate things, with
 1. **Coordinator creates a disbursement** — beneficiary, full amount (USD), and a free-text support intention.
 2. **AI extracts a proposed plan** — categories + amounts with `evidenceText` per line; AI never invents an amount, and a sum over the total is rejected deterministically.
 3. **Coordinator confirms the draft** — fully editable, deterministic total validation.
-4. **Beneficiary invitation** — one secure, expiring, revocable link per disbursement (copyable; no email dependency).
+4. **Beneficiary invitation** — the coordinator clicks **Send plan**: the latest plan version (categories + amounts) is emailed to the beneficiary when an email provider is configured, and the secure link is always shown as a copyable fallback. One live, expiring, revocable link per disbursement; no email dependency.
 5. **Beneficiary reviews** in a preferred language (en / ta / hi) — accepts, suggests changes, or declines to share. A voluntary-consent statement is shown; **responding is never a condition of payment**.
 6. **AI explains the revision** — neutral language over a **deterministic diff** (diff is computed in code, never by AI).
 7. **Coordinator acknowledges** — without overwriting the beneficiary's response.
 8. **One full PayPal sandbox payout** — explicit human confirmation, single item, neutral note with only the `FL-` reference.
 9. **Live status** — batch status and item status are stored and shown **separately**; unknown statuses are preserved verbatim.
 10. **Shared timeline** — append-only audit events both parties can see.
+
+### Plan delivery, WhatsApp and drafts
+
+- **Send plan** (`POST /api/disbursements/[id]/send-plan`) mints a fresh invitation and emails the **latest** plan version — programme name, total, category amounts and the unallocated remainder — plus the secure link. With `EMAIL_PROVIDER=noop` (default) nothing is emailed and the UI shows the copyable link instead; with `EMAIL_PROVIDER=resend` the proposal is delivered and the UI reports the outcome. The copyable link is always the source of truth.
+- **WhatsApp**: there is no public "send to any number" API — business-initiated messages need the Meta WhatsApp Business Platform (verified business, dedicated number, pre-approved templates) or a reseller such as Twilio. The MVP therefore uses a `wa.me` **share link** (the coordinator's own WhatsApp); automating WhatsApp is a post-MVP adapter, not a hackathon dependency.
+- **Delete draft** (`DELETE /api/disbursements/[id]`, ADR-0018): a disbursement that was never sent can be soft-deleted. The row is kept (`deletedAt`) so the append-only ledger and every audit record survive; active invitation links are revoked, the portal 404s, and the register/dashboard hide the row. A second delete returns 404.
 
 ### Seeded demo scenario (synthetic)
 
@@ -169,7 +175,7 @@ Sign in at `/login` with the seeded coordinator:
 
 1. **Dashboard** → open the seeded disbursement `FL-SEED-001` (Maria Santos, USD 500.00, DRAFT).
 2. **Extract plan** with AI → three editable categories; edit an amount past the total to see the deterministic over-total block.
-3. **Create invitation** → copy the link, open it (mobile viewport shows the beneficiary portal): consent statement, language switcher (en/ta/hi), **Accept / Suggest changes / Decline to share**.
+3. **Send plan** → the latest plan is emailed to the beneficiary (or copy the link / share it via WhatsApp), then open it (mobile viewport shows the beneficiary portal): consent statement, language switcher (en/ta/hi), **Accept / Suggest changes / Decline to share**. A never-sent draft can be removed with **Delete draft** (soft delete — audit history is preserved).
 4. **Suggest a change** → back on the coordinator side, compare v1 vs v2: deterministic diff plus the neutral AI explanation — the payment amount is still USD 500.00.
 5. **Acknowledge**, then **Send full payment** → a real PayPal sandbox batch; refresh to read batch and item status separately. A second click cannot duplicate it.
 6. **Analytics** → aggregate-only workspace. `FL-SEED-002` is a seeded `MOCK`-mode row that demonstrates the `MOCK PAYMENT` badge and an unknown status (`FOO`) surfaced verbatim.

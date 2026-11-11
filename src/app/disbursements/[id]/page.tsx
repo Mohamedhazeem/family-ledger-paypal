@@ -17,6 +17,7 @@ import { PlanResponseWatcher } from "@/components/disbursements/plan-response-wa
 import { RefreshPayoutStatusButton } from "@/components/disbursements/refresh-payout-status-button";
 import { RevokeInvitationButton } from "@/components/disbursements/revoke-invitation-button";
 import { SendPaymentButton } from "@/components/disbursements/send-payment-button";
+import { SendPlanButton } from "@/components/disbursements/send-plan-button";
 import { DiffCard, TimelineCard, VersionsGrid } from "./detail-sections";
 
 /**
@@ -149,6 +150,13 @@ export default async function DisbursementDetailPage({
               <p className="mt-1 text-xs text-indigo-100">Acknowledge is never a release condition for payment.</p>
             </div>
             <CardContent className="space-y-6 pt-5">
+              <div className="space-y-2">
+                <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Share plan</p>
+                <SendPlanButton
+                  disbursementId={disbursement.id}
+                  beneficiaryEmail={disbursement.beneficiary.invitationEmail}
+                />
+              </div>
               <div className="space-y-2">
                 <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Acknowledge plan</p>
                 <AcknowledgeButton

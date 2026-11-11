@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Copy, Link2, Mail, MessageCircle } from "lucide-react";
+import { Link2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ShareLinkButtons } from "./share-link-buttons";
 
 /**
  * CreateInvitationButton (Slice 3.1): mints a new invitation from the
@@ -15,7 +16,6 @@ export function CreateInvitationButton({ disbursementId }: { disbursementId: str
   const router = useRouter();
   const [state, setState] = useState<"idle" | "sending" | "error">("idle");
   const [link, setLink] = useState<{ url: string; expiresAt: string } | null>(null);
-  const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function create() {
@@ -34,52 +34,13 @@ export function CreateInvitationButton({ disbursementId }: { disbursementId: str
     }
   }
 
-  async function copy() {
-    if (!link) return;
-    try {
-      await navigator.clipboard.writeText(link.url);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // Clipboard unavailable (e.g. insecure context) — the link stays
-      // visible so the coordinator can copy it manually.
-    }
-  }
-
   if (link) {
     return (
       <div className="space-y-2 rounded-2xl border border-indigo-200 bg-indigo-50 p-3">
         <p className="text-xs font-medium uppercase tracking-wider text-indigo-700">
           Invitation link — shown only once
         </p>
-        <p className="break-all rounded-xl border border-indigo-200 bg-white px-3 py-2 font-mono text-xs text-slate-700">
-          {link.url}
-        </p>
-        <div className="flex items-center justify-between gap-2">
-          <p className="text-xs text-slate-500">
-            Expires {new Date(link.expiresAt).toLocaleDateString()} · share it with the beneficiary
-          </p>
-          <Button type="button" variant="outline" size="sm" onClick={copy}>
-            {copied ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
-            {copied ? "Copied" : "Copy link"}
-          </Button>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <a
-            href={`mailto:?subject=${encodeURIComponent("Your family support plan")}&body=${encodeURIComponent(`Here is your secure FamilyLedger invitation link (valid until ${new Date(link.expiresAt).toLocaleDateString()}):\n\n${link.url}\n\nThis is a voluntary support plan. It does not restrict how you use the money you receive.`)}`}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-white px-3 py-1.5 text-xs font-medium text-indigo-700 transition hover:bg-indigo-50"
-          >
-            <Mail className="h-3.5 w-3.5" /> Email link
-          </a>
-          <a
-            href={`https://wa.me/?text=${encodeURIComponent(`Your FamilyLedger invitation link (valid until ${new Date(link.expiresAt).toLocaleDateString()}): ${link.url}`)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-white px-3 py-1.5 text-xs font-medium text-indigo-700 transition hover:bg-indigo-50"
-          >
-            <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
-          </a>
-        </div>
+        <ShareLinkButtons url={link.url} expiresAt={link.expiresAt} />
       </div>
     );
   }

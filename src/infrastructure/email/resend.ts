@@ -1,5 +1,11 @@
 import "server-only";
-import type { EmailMessage, EmailPort, EmailResult } from "@/application/ports/email";
+import type {
+  EmailMessage,
+  EmailPort,
+  EmailResult,
+  PlanProposalEmailData,
+} from "@/application/ports/email";
+import { buildPlanProposalEmail } from "./plan-proposal-template";
 
 /**
  * Resend email adapter (optional, spec §6 Step 4). Uses the Resend
@@ -45,5 +51,15 @@ export class ResendEmailAdapter implements EmailPort {
     } catch {
       return { delivered: false, provider: "resend" };
     }
+  }
+
+  async sendPlanProposal(data: PlanProposalEmailData): Promise<EmailResult> {
+    const email = buildPlanProposalEmail(data);
+    return this.send({
+      to: data.to,
+      subject: email.subject,
+      text: email.text,
+      html: email.html,
+    });
   }
 }
