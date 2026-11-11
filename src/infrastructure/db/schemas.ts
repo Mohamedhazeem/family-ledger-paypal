@@ -109,6 +109,13 @@ export const recipientInvitationInputSchema = z.object({
   expiresAt: z.date(),
 });
 
+export const planClarificationInputSchema = z.object({
+  disbursementId: z.string().min(1),
+  question: z.string().trim().min(1),
+  createdByType: z.enum(["COORDINATOR", "BENEFICIARY", "SYSTEM"]),
+  createdById: z.string().min(1).nullable(),
+});
+
 export const payoutAttemptInputSchema = z.object({
   disbursementId: z.string().min(1),
   senderBatchId: z.string().min(1),

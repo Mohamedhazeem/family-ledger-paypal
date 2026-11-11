@@ -3,6 +3,7 @@ import { toMinorUnits } from "@/domain/value-objects/money";
 import type {
   DisbursementRepository,
   LedgerEventRepository,
+  PlanClarificationRepository,
   PlanVersionRepository,
   RecipientInvitationRepository,
 } from "@/application/ports/db";
@@ -38,17 +39,20 @@ export class ProposeRevision {
   private readonly disbursements: DisbursementRepository;
   private readonly plans: PlanVersionRepository;
   private readonly ledger: LedgerEventRepository;
+  private readonly clarifications: PlanClarificationRepository;
 
   constructor(
     invitations: RecipientInvitationRepository,
     disbursements: DisbursementRepository,
     plans: PlanVersionRepository,
     ledger: LedgerEventRepository,
+    clarifications: PlanClarificationRepository,
   ) {
     this.invitations = invitations;
     this.disbursements = disbursements;
     this.plans = plans;
     this.ledger = ledger;
+    this.clarifications = clarifications;
   }
 
   async execute(token: string, input: ProposeRevisionInput): Promise<ProposeRevisionResult> {
@@ -105,6 +109,11 @@ export class ProposeRevision {
       })),
     );
     await this.disbursements.updatePlanStatus(disbursement.id, "REVISION_PROPOSED");
+    // The beneficiary's new suggestion answers the pending question, if any.
+    const pending = await this.clarifications.findLatestUnansweredByDisbursementId(disbursement.id);
+    if (pending) {
+      await this.clarifications.markResponded(pending.id, new Date());
+    }
     await this.ledger.create({
       disbursementId: disbursement.id,
       actorType: "BENEFICIARY",

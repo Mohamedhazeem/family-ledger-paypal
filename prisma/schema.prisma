@@ -132,6 +132,7 @@ model Disbursement {
   planVersions                    PlanVersion[]
   ledgerEvents                    LedgerEvent[]
   recipientInvitations            RecipientInvitation[]
+  planClarifications              PlanClarification[]
   payoutAttempts                  PayoutAttempt[]
   createdAt                       DateTime      @default(now())
   updatedAt                       DateTime      @updatedAt
@@ -228,6 +229,21 @@ model RecipientInvitation {
   revokedAt      DateTime?
   createdAt      DateTime     @default(now())
   lastViewedAt   DateTime?
+
+  @@index([disbursementId])
+}
+
+// ADR-0019 / spec §6 Step 7: coordinator clarification questions.
+// History is preserved; the beneficiary sees the latest unanswered one.
+model PlanClarification {
+  id             String       @id @default(cuid())
+  disbursementId String
+  disbursement   Disbursement @relation(fields: [disbursementId], references: [id], onDelete: Restrict)
+  question       String       @db.Text
+  createdByType  ActorType
+  createdById    String?
+  respondedAt    DateTime?
+  createdAt      DateTime     @default(now())
 
   @@index([disbursementId])
 }

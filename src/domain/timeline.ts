@@ -19,9 +19,11 @@ export type LedgerEventType =
   | "PLAN_REVISION_PROPOSED"
   | "PLAN_DECLINED"
   | "PLAN_ACKNOWLEDGED"
+  | "PLAN_CLARIFICATION_REQUESTED"
+  | "PLAN_COORDINATOR_REVISION"
+  | "DISBURSEMENT_AMOUNT_UPDATED"
   | "PAYMENT_SUBMITTED"
-  | "PAYOUT_STATUS_UPDATED"
-  | "PLAN_CLARIFICATION_REQUESTED";
+  | "PAYOUT_STATUS_UPDATED";
 
 export interface TimelineVisibility {
   coordinator: boolean;
@@ -45,6 +47,9 @@ export const TIMELINE_VISIBILITY: Record<LedgerEventType, TimelineVisibility> = 
   PAYOUT_STATUS_UPDATED: { coordinator: true, beneficiary: false },
   // Coordinator clarification asks are operator-only.
   PLAN_CLARIFICATION_REQUESTED: { coordinator: true, beneficiary: false },
+  // ADR-0019: coordinator revisions and amount changes are shared history.
+  PLAN_COORDINATOR_REVISION: { coordinator: true, beneficiary: true },
+  DISBURSEMENT_AMOUNT_UPDATED: { coordinator: true, beneficiary: true },
 };
 
 const LABELS: Record<LedgerEventType, { coordinator: string; beneficiary: string }> = {
@@ -60,6 +65,14 @@ const LABELS: Record<LedgerEventType, { coordinator: string; beneficiary: string
   PAYMENT_SUBMITTED: { coordinator: "Payout submitted", beneficiary: "Payout submitted" },
   PAYOUT_STATUS_UPDATED: { coordinator: "PayPal status updated", beneficiary: "PayPal status updated" },
   PLAN_CLARIFICATION_REQUESTED: { coordinator: "Clarification requested", beneficiary: "Clarification requested" },
+  PLAN_COORDINATOR_REVISION: {
+    coordinator: "Coordinator proposed an adjusted plan",
+    beneficiary: "Coordinator proposed an adjusted plan",
+  },
+  DISBURSEMENT_AMOUNT_UPDATED: {
+    coordinator: "Support amount updated",
+    beneficiary: "Support amount updated",
+  },
 };
 
 export function timelineLabel(eventType: LedgerEventType, role: TimelineRole): string {

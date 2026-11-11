@@ -214,3 +214,20 @@ export interface RecipientInvitationInput {
   tokenHash: string;
   expiresAt: Date;
 }
+
+export interface PlanClarificationRecord {
+  id: string;
+  disbursementId: string;
+  question: string;
+  createdByType: ActorType;
+  createdById: string | null;
+  respondedAt: Date | null;
+  createdAt: Date;
+}
+
+export interface PlanClarificationInput {
+  disbursementId: string;
+  question: string;
+  createdByType: ActorType;
+  createdById: string | null;
+}

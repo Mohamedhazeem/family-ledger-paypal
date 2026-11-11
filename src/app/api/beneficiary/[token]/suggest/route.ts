@@ -8,6 +8,7 @@ import { InvitationNotFoundError } from "@/application/use-cases/get-invitation-
 import {
   PrismaDisbursementRepository,
   PrismaLedgerEventRepository,
+  PrismaPlanClarificationRepository,
   PrismaPlanVersionRepository,
   PrismaRecipientInvitationRepository,
 } from "@/infrastructure/db/repositories";
@@ -62,6 +63,7 @@ export async function POST(
       new PrismaDisbursementRepository(),
       new PrismaPlanVersionRepository(),
       new PrismaLedgerEventRepository(),
+      new PrismaPlanClarificationRepository(),
     ).execute(token, {
       items: parsed.data.items.map((item) => ({
         category: item.category,

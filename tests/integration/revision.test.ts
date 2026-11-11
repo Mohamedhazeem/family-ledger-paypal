@@ -35,6 +35,7 @@ const { InvitationNotFoundError } = await import("@/application/use-cases/get-in
 const {
   PrismaDisbursementRepository,
   PrismaLedgerEventRepository,
+  PrismaPlanClarificationRepository,
   PrismaPlanVersionRepository,
   PrismaRecipientInvitationRepository,
 } = await import("@/infrastructure/db/repositories");
@@ -109,6 +110,7 @@ function useCase() {
     new PrismaDisbursementRepository(),
     new PrismaPlanVersionRepository(),
     new PrismaLedgerEventRepository(),
+    new PrismaPlanClarificationRepository(),
   );
 }
 

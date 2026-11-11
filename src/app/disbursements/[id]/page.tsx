@@ -11,6 +11,8 @@ import { formatStatusLabel, toneForStatus } from "@/app/dashboard/disbursement-f
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { AcknowledgeButton } from "@/components/disbursements/acknowledge-button";
+import { AdjustProposalButton } from "@/components/disbursements/adjust-proposal-button";
+import { AskClarificationButton } from "@/components/disbursements/ask-clarification-button";
 import { CreateInvitationButton } from "@/components/disbursements/create-invitation-button";
 import { DeleteDraftButton } from "@/components/disbursements/delete-draft-button";
 import { PlanResponseWatcher } from "@/components/disbursements/plan-response-watcher";
@@ -157,12 +159,41 @@ export default async function DisbursementDetailPage({
                   beneficiaryEmail={disbursement.beneficiary.invitationEmail}
                 />
               </div>
+              {disbursement.paymentStatus === "NOT_SENT" ? (
+                <>
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Adjust proposal</p>
+                    <AdjustProposalButton
+                      disbursementId={disbursement.id}
+                      initialItems={
+                        latest
+                          ? latest.items.map((item) => ({
+                              category: item.category,
+                              amountText: item.amountMinor === null ? "" : formatMinor(item.amountMinor),
+                            }))
+                          : []
+                      }
+                      initialTotalText={formatMinor(disbursement.amountMinor)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Ask the beneficiary</p>
+                    <AskClarificationButton disbursementId={disbursement.id} />
+                  </div>
+                </>
+              ) : null}
               <div className="space-y-2">
                 <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Acknowledge plan</p>
-                <AcknowledgeButton
-                  disbursementId={disbursement.id}
-                  alreadyAcknowledged={disbursement.planStatus === "COORDINATOR_ACKNOWLEDGED"}
-                />
+                {latest && latest.createdByType === "COORDINATOR" && disbursement.planStatus !== "COORDINATOR_ACKNOWLEDGED" ? (
+                  <p className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs leading-relaxed text-slate-500">
+                    Waiting for the beneficiary&apos;s response to your proposal.
+                  </p>
+                ) : (
+                  <AcknowledgeButton
+                    disbursementId={disbursement.id}
+                    alreadyAcknowledged={disbursement.planStatus === "COORDINATOR_ACKNOWLEDGED"}
+                  />
+                )}
               </div>
               <div className="space-y-2">
                 <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Send payment</p>

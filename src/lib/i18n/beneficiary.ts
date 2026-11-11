@@ -34,6 +34,8 @@ export interface BeneficiaryStrings {
   timeline: string;
   noEventsYet: string;
   programmeSupportPlan: string;
+  clarificationHeading: string;
+  clarificationHint: string;
 }
 
 const EN: BeneficiaryStrings = {
@@ -56,6 +58,8 @@ const EN: BeneficiaryStrings = {
   timeline: "Timeline",
   noEventsYet: "No events yet.",
   programmeSupportPlan: "has put together a support plan for you, below.",
+  clarificationHeading: "A question from your coordinator",
+  clarificationHint: "Reply by suggesting changes below.",
 };
 
 const TA: BeneficiaryStrings = {
@@ -78,6 +82,8 @@ const TA: BeneficiaryStrings = {
   timeline: "காலவரிசை",
   noEventsYet: "இன்னும் நிகழ்வுகள் இல்லை.",
   programmeSupportPlan: "உங்களுக்காக ஒரு ஆதரவுத் திட்டத்தைத் தயாரித்துள்ளது.",
+  clarificationHeading: "உங்கள் ஒருங்கிணைப்பாளரிடமிருந்து ஒரு கேள்வி",
+  clarificationHint: "கீழே மாற்றங்களைப் பரிந்துரைத்து பதிலளிக்கவும்.",
 };
 
 const HI: BeneficiaryStrings = {
@@ -100,6 +106,8 @@ const HI: BeneficiaryStrings = {
   timeline: "समयरेखा",
   noEventsYet: "अभी कोई घटना नहीं।",
   programmeSupportPlan: "ने आपके लिए एक सहायता योजना तैयार की है।",
+  clarificationHeading: "आपके समन्वयक से एक प्रश्न",
+  clarificationHint: "नीचे परिवर्तन सुझाकर उत्तर दें।",
 };
 
 export const BENEFICIARY_STRINGS: Record<PortalLang, BeneficiaryStrings> = { en: EN, ta: TA, hi: HI };

@@ -15,6 +15,9 @@ import type {
   PayoutAttemptInput,
   PayoutAttemptRecord,
   PayoutAttemptRepository,
+  PlanClarificationInput,
+  PlanClarificationRecord,
+  PlanClarificationRepository,
   PlanItemInput,
   PlanItemRecord,
   PlanVersionInput,
@@ -34,6 +37,7 @@ import {
   ledgerEventInputSchema,
   organizationInputSchema,
   payoutAttemptInputSchema,
+  planClarificationInputSchema,
   planItemInputSchema,
   planVersionInputSchema,
   recipientInvitationInputSchema,
@@ -102,6 +106,10 @@ export class PrismaDisbursementRepository implements DisbursementRepository {
 
   async updatePaymentStatus(id: string, status: DisbursementRecord["paymentStatus"]): Promise<DisbursementRecord> {
     return prisma.disbursement.update({ where: { id }, data: { paymentStatus: status } });
+  }
+
+  async updateAmount(id: string, amountMinor: bigint): Promise<DisbursementRecord> {
+    return prisma.disbursement.update({ where: { id }, data: { amountMinor } });
   }
 
   async claimForSubmission(id: string): Promise<boolean> {
@@ -232,5 +240,31 @@ export class PrismaRecipientInvitationRepository implements RecipientInvitationR
       where: { id },
       data: { lastViewedAt: viewedAt },
     });
+  }
+}
+
+/** Clarification questions (ADR-0019 / spec §6 Step 7). */
+export class PrismaPlanClarificationRepository implements PlanClarificationRepository {
+  async create(input: PlanClarificationInput): Promise<PlanClarificationRecord> {
+    const data = planClarificationInputSchema.parse(input);
+    return prisma.planClarification.create({ data });
+  }
+
+  async findLatestUnansweredByDisbursementId(disbursementId: string): Promise<PlanClarificationRecord | null> {
+    return prisma.planClarification.findFirst({
+      where: { disbursementId, respondedAt: null },
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
+  async listByDisbursementId(disbursementId: string): Promise<PlanClarificationRecord[]> {
+    return prisma.planClarification.findMany({
+      where: { disbursementId },
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
+  async markResponded(id: string, respondedAt: Date): Promise<PlanClarificationRecord> {
+    return prisma.planClarification.update({ where: { id }, data: { respondedAt } });
   }
 }

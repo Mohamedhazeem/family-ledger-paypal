@@ -9,6 +9,7 @@ import {
   PrismaDisbursementRepository,
   PrismaLedgerEventRepository,
   PrismaOrganizationRepository,
+  PrismaPlanClarificationRepository,
   PrismaPlanVersionRepository,
   PrismaRecipientInvitationRepository,
 } from "@/infrastructure/db/repositories";
@@ -69,6 +70,8 @@ export default async function BeneficiaryPage({
   const { lang } = await searchParams;
   const activeLang = resolvePortalLang(view.beneficiaryLanguage, lang);
   const { strings } = localizeView(view, activeLang);
+  const clarification = await new PrismaPlanClarificationRepository()
+    .findLatestUnansweredByDisbursementId(view.disbursementId);
   const timeline = visibleTimeline(
     await prisma.ledgerEvent.findMany({
       where: { disbursementId: view.disbursementId },
@@ -139,6 +142,16 @@ export default async function BeneficiaryPage({
           <CardContent className="pt-5">
             <h2 className="text-base font-semibold text-slate-900">{strings.fromYourCoordinator}</h2>
             <p className="mt-2 text-sm leading-6 text-slate-600">{view.supportNote}</p>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {clarification ? (
+        <Card>
+          <CardContent className="pt-5">
+            <h2 className="text-base font-semibold text-slate-900">{strings.clarificationHeading}</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-700">{clarification.question}</p>
+            <p className="mt-2 text-xs text-slate-500">{strings.clarificationHint}</p>
           </CardContent>
         </Card>
       ) : null}

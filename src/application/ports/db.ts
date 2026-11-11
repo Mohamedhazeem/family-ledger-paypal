@@ -15,6 +15,8 @@ import type {
   PlanItemRecord,
   PlanVersionInput,
   PlanVersionRecord,
+  PlanClarificationInput,
+  PlanClarificationRecord,
   RecipientInvitationInput,
   RecipientInvitationRecord,
   UserInput,
@@ -34,6 +36,8 @@ export type {
   OrganizationRecord,
   PayoutAttemptInput,
   PayoutAttemptRecord,
+  PlanClarificationInput,
+  PlanClarificationRecord,
   PlanItemInput,
   PlanItemRecord,
   PlanVersionInput,
@@ -72,6 +76,11 @@ export interface DisbursementRepository {
   findByPayoutBatchId(_payoutBatchId: string): Promise<DisbursementRecord | null>;
   updatePlanStatus(_id: string, _status: PlanStatus): Promise<DisbursementRecord>;
   updatePaymentStatus(_id: string, _status: PaymentStatus): Promise<DisbursementRecord>;
+  /**
+   * Update the full payout amount (ADR-0019). Only callable while the
+   * disbursement has never been sent — enforced by the use case.
+   */
+  updateAmount(_id: string, _amountMinor: bigint): Promise<DisbursementRecord>;
   /**
    * Single-submission lock (spec §11): atomically flips the status to
    * SUBMITTING only from NOT_SENT/READY — or from FAILED, a terminal
@@ -139,4 +148,12 @@ export interface RecipientInvitationRepository {
   listByDisbursementId(_disbursementId: string): Promise<RecipientInvitationRecord[]>;
   revoke(_id: string, _revokedAt: Date): Promise<RecipientInvitationRecord>;
   markViewed(_id: string, _viewedAt: Date): Promise<void>;
+}
+
+/** Clarification questions (ADR-0019 / spec §6 Step 7). */
+export interface PlanClarificationRepository {
+  create(_input: PlanClarificationInput): Promise<PlanClarificationRecord>;
+  findLatestUnansweredByDisbursementId(_disbursementId: string): Promise<PlanClarificationRecord | null>;
+  listByDisbursementId(_disbursementId: string): Promise<PlanClarificationRecord[]>;
+  markResponded(_id: string, _respondedAt: Date): Promise<PlanClarificationRecord>;
 }
