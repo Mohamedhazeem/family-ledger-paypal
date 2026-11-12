@@ -19,7 +19,7 @@
     "db:deploy": "prisma migrate deploy",
     "db:seed": "tsx --env-file=.env prisma/seed.ts",
     "db:push": "prisma db push",
-    "prepare": "husky",
+    "prepare": "husky || true",
     "postinstall": "prisma generate",
     "format": "prettier --write .",
     "check:file-size": "npx tsx scripts/check-file-size.ts",

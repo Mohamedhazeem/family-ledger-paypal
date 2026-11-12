@@ -20,7 +20,9 @@ services:
       - key: DEMO_MODE
         value: "true"
       - key: DATABASE_URL
-        sync: false
+        fromDatabase:
+          name: family-ledger-db
+          property: connectionString
       - key: AUTH_SECRET
         sync: false
       - key: APP_ENCRYPTION_KEY
