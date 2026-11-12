@@ -6,7 +6,9 @@ services:
     # Free tier has no preDeployCommand, so pending migrations run in
     # startCommand (idempotent: migrate deploy only applies pending ones).
     buildCommand: npm install && npm run build
-    startCommand: npm run db:deploy && npm run start
+    # Free tier has no shell/preDeployCommand; seed runs on start (idempotent
+    # upserts, safe to repeat) so the demo coordinator/beneficiary exist.
+    startCommand: npm run db:deploy && npm run db:seed && npm run start
     healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
