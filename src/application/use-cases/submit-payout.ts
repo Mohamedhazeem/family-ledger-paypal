@@ -155,7 +155,26 @@ export class SubmitPayout {
     if (!beneficiary) {
       throw new Error("Beneficiary not found for disbursement.");
     }
-    const receiverEmail = decryptField(beneficiary.encryptedPayPalRecipient, key);
+
+    // Decrypt before any outbound call. A malformed/rotated ciphertext is
+    // a deterministic failure: finalize the attempt as FAILED (retryable)
+    // instead of leaving the disbursement stuck in SUBMITTING.
+    let receiverEmail: string;
+    try {
+      receiverEmail = decryptField(beneficiary.encryptedPayPalRecipient, key);
+    } catch {
+      await this.attempts.update(attempt.id, {
+        attemptState: "FAILED",
+        responsePayloadRedacted: "Recipient email could not be decrypted.",
+      });
+      await this.disbursements.updatePaymentStatus(disbursement.id, "FAILED");
+      return {
+        senderBatchId: attempt.senderBatchId,
+        attemptState: "FAILED",
+        paypalPayoutBatchId: null,
+        paymentStatus: "FAILED",
+      };
+    }
 
     let result;
     try {
@@ -178,7 +197,7 @@ export class SubmitPayout {
         responsePayloadRedacted: error instanceof Error ? error.message : String(error),
       });
       await this.disbursements.updatePaymentStatus(disbursement.id, paymentStatus);
-      return { senderBatchId: attempt.senderBatchId, attemptState: "UNKNOWN", paypalPayoutBatchId: null, paymentStatus };
+      return { senderBatchId: attempt.senderBatchId, attemptState, paypalPayoutBatchId: null, paymentStatus };
     }
 
     await this.attempts.update(attempt.id, {
