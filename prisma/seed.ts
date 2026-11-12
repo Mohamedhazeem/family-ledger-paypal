@@ -2,6 +2,28 @@ import { PrismaClient } from "../generated/prisma";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { hashPassword } from "better-auth/crypto";
 import { encryptField } from "../src/lib/security/cipher";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
+// Load .env when running locally (Render injects env vars instead).
+function loadEnvFile(): void {
+  try {
+    const content = readFileSync(join(process.cwd(), ".env"), "utf8");
+    for (const line of content.split("\\n")) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith("#")) continue;
+      const eq = trimmed.indexOf("=");
+      if (eq === -1) continue;
+      const key = trimmed.slice(0, eq).trim();
+      let value = trimmed.slice(eq + 1).trim();
+      if (/^".*"$/.test(value)) value = value.slice(1, -1);
+      if (key && !(key in process.env)) process.env[key] = value;
+    }
+  } catch {
+    /* no .env (e.g. Render) — rely on process.env */
+  }
+}
+loadEnvFile();
 
 function requiredEnv(name: string): string {
   const value = process.env[name];
