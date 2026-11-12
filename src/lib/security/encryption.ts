@@ -1,42 +1,8 @@
 import "server-only";
-import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
 
 /**
- * Field encryption (ADR-0008, AGENTS §8): AES-256-GCM keyed by
- * APP_ENCRYPTION_KEY. Ciphertext format: iv:tag:data (base64).
- * Used to store the PayPal recipient email at rest.
+ * Server-only facade over the AES-256-GCM field cipher (ADR-0008).
+ * Application code imports from here; scripts that run outside Next
+ * (seed, migrations) import `./cipher` directly.
  */
-
-const ALGORITHM = "aes-256-gcm";
-const IV_BYTES = 12;
-
-function keyFromEnv(keyHex: string): Buffer {
-  if (!/^[0-9a-fA-F]{64}$/.test(keyHex)) {
-    throw new Error("APP_ENCRYPTION_KEY must be 64 hex characters (32 bytes).");
-  }
-  return Buffer.from(keyHex, "hex");
-}
-
-export function encryptField(plaintext: string, keyHex: string): string {
-  const key = keyFromEnv(keyHex);
-  const iv = randomBytes(IV_BYTES);
-  const cipher = createCipheriv(ALGORITHM, key, iv);
-  const data = Buffer.concat([cipher.update(plaintext, "utf8"), cipher.final()]);
-  const tag = cipher.getAuthTag();
-  return [iv.toString("base64"), tag.toString("base64"), data.toString("base64")].join(":");
-}
-
-export function decryptField(ciphertext: string, keyHex: string): string {
-  const key = keyFromEnv(keyHex);
-  const [iv64, tag64, data64] = ciphertext.split(":");
-  if (!iv64 || !tag64 || !data64) {
-    throw new Error("Invalid ciphertext format.");
-  }
-  const decipher = createDecipheriv(ALGORITHM, key, Buffer.from(iv64, "base64"));
-  decipher.setAuthTag(Buffer.from(tag64, "base64"));
-  const plain = Buffer.concat([
-    decipher.update(Buffer.from(data64, "base64")),
-    decipher.final(),
-  ]);
-  return plain.toString("utf8");
-}
+export { decryptField, encryptField } from "./cipher";
