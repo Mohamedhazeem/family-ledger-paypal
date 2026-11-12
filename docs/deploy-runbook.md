@@ -16,8 +16,9 @@ Render service env vars (dashboard or `render.yaml`): `NODE_ENV`,
 1. Create the blueprint from `render.yaml` (or create a Web Service
    + PostgreSQL manually with the same values).
 2. First deploy: Render builds (`npm install && npm run build`) and
-   starts (`npm run start`). The health check polls
-   `GET /api/health` → `{"status":"ok"}`.
+   starts (`npm run db:deploy && npm run start`). The health check
+   polls `GET /api/health` → `{"status":"ok"}`. (Free tier has no
+   `preDeployCommand`, so migrations run in `startCommand`.)
 3. If auto-deploy is on, every push to `main` redeploys.
 
 ## 3. Migrations

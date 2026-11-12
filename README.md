@@ -289,6 +289,27 @@ scope granted — step-by-step in [`docs/paypal-sandbox.md`](docs/paypal-sandbox
 - `MOCK` payment rows are visibly badged `MOCK PAYMENT`; the judge demo
   uses a real sandbox call.
 
+## Deploy on Render (sandbox demo)
+
+The repo ships `render.yaml` (web service + managed Postgres) and
+[`docs/deploy-runbook.md`](docs/deploy-runbook.md). Quick path:
+
+1. Push to GitHub → Render **New → Blueprint** → connect repo.
+2. Fill the `sync: false` secrets in the service Environment tab:
+   `APP_URL`, `AUTH_SECRET`, `APP_ENCRYPTION_KEY`, `DATABASE_URL`,
+   `AI_API_KEY`/`AI_MODEL`/`AI_BASE_URL`, `PAYPAL_CLIENT_ID`,
+   `PAYPAL_CLIENT_SECRET`, and (optional) `AG_STUDIO_LICENSE_KEY`,
+   `EMAIL_PROVIDER`/`RESEND_API_KEY`.
+3. First deploy runs `npm install && npm run build`, then
+   `npm run db:deploy && npm run start` (migrations run in the
+   start command — free tier has no `preDeployCommand`);
+   health check is `/api/health`.
+4. Seed once: `npm run db:seed` (idempotent, synthetic).
+5. Wake the free-tier service a few minutes before judging (it sleeps
+   after 15 min idle). `DEMO_MODE=true` keeps the demo honestly labelled.
+
+**Demo video:** `<VIDEO_URL>` · **Live demo:** `<RENDER_URL>`
+
 ## Documentation
 
 - [`docs/architecture.md`](docs/architecture.md) — layers, dependency rules
