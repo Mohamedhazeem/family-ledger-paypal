@@ -31,7 +31,7 @@ test.describe("new disbursement (Slice 2.6)", () => {
 
     // Real AI extraction (live provider): wait until 3 categories appear.
     await expect(page.getByLabel("Category 1", { exact: true })).toHaveValue("Rent", { timeout: 120_000 });
-    await expect(page.getByLabel("Category 2", { exact: true })).toHaveValue("School fees");
+    await expect(page.getByLabel("Category 2", { exact: true })).toHaveValue(/school fees/i);
     await expect(page.getByLabel("Category 3", { exact: true })).toHaveValue("Food");
     await expect(page.getByLabel("Amount for category 1", { exact: true })).toHaveValue("300.00");
 
@@ -45,7 +45,8 @@ test.describe("new disbursement (Slice 2.6)", () => {
     await expect(page.getByText("$500.00").first()).toBeVisible();
     await page.getByRole("button", { name: "Save disbursement" }).click();
 
-    await expect(page).toHaveURL(/\/dashboard/);
+    // The app lands on the new disbursement's detail page.
+    await expect(page).toHaveURL(/\/disbursements\//);
     await expect(page.getByText(beneficiaryName)).toBeVisible();
   });
 

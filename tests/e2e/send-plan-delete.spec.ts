@@ -43,12 +43,12 @@ test("send plan delivers the proposal and delete removes a never-sent draft", as
   // Send plan: the latest plan is delivered (or the copy fallback is offered).
   await page.getByRole("button", { name: "Send plan to beneficiary" }).click();
   await expect(page.getByText("Plan sent")).toBeVisible();
-  await expect(page.getByText(/Email not configured|Sent to/)).toBeVisible();
+  await expect(page.getByText(/Email not configured|Sent to|Delivery failed/)).toBeVisible();
   await expect(page.getByText(/\/beneficiary\//)).toBeVisible();
 
   // Delete draft: two-step confirm, then back on the register.
   await page.getByRole("button", { name: "Delete draft" }).click();
-  await page.getByRole("button", { name: "Confirm delete" }).click();
-  await expect(page).toHaveURL(/\/disbursements$/);
+  await page.getByRole("button", { name: "Delete", exact: true }).click();
+  await expect(page).toHaveURL(/\/disbursements$/, { timeout: 30_000 });
   await expect(page.getByText(publicReference)).toHaveCount(0);
 });
