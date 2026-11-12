@@ -1,11 +1,18 @@
 import { PrismaClient } from "../generated/prisma";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { hashPassword } from "better-auth/crypto";
+import { encryptField } from "../src/lib/security/cipher";
 
-const connectionString = process.env.DATABASE_URL;
-if (!connectionString) {
-  throw new Error("DATABASE_URL is not set. Configure it in the environment (see .env.example).");
+function requiredEnv(name: string): string {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`${name} is not set. Configure it in the environment (see .env.example).`);
+  }
+  return value;
 }
+
+const connectionString = requiredEnv("DATABASE_URL");
+const encryptionKey = requiredEnv("APP_ENCRYPTION_KEY");
 const prisma = new PrismaClient({ adapter: new PrismaPg(connectionString) });
 
 const ORG_NAME = "Community Family Support Programme";
@@ -65,13 +72,19 @@ async function main(): Promise<void> {
 
   const beneficiary = await prisma.beneficiary.upsert({
     where: { id: "seed-beneficiary-maria-santos" },
-    update: { displayName: BENEFICIARY_DISPLAY, preferredLanguage: "en" },
+    update: {
+      displayName: BENEFICIARY_DISPLAY,
+      preferredLanguage: "en",
+      // Re-encrypt on every run so a rotated APP_ENCRYPTION_KEY (or the
+      // original placeholder row) never leaves an undecryptable recipient.
+      encryptedPayPalRecipient: encryptField("maria.santos.paypal@example.com", encryptionKey),
+    },
     create: {
       id: "seed-beneficiary-maria-santos",
       organizationId: organization.id,
       displayName: BENEFICIARY_DISPLAY,
       invitationEmail: "maria.santos@example.com",
-      encryptedPayPalRecipient: "synthetic-ciphertext-placeholder",
+      encryptedPayPalRecipient: encryptField("maria.santos.paypal@example.com", encryptionKey),
       preferredLanguage: "en",
     },
   });
