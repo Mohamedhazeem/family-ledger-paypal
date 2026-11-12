@@ -20,6 +20,9 @@ Render service env vars (dashboard or `render.yaml`): `NODE_ENV`,
    polls `GET /api/health` → `{"status":"ok"}`. (Free tier has no
    `preDeployCommand`, so migrations run in `startCommand`.)
 3. If auto-deploy is on, every push to `main` redeploys.
+   Seeding is automatic: `startCommand` runs `npm run db:deploy && npm run db:seed`,
+   and the seed is idempotent (upserts), so repeated starts are safe. No shell
+   access needed (works on the free tier).
 
 ## 3. Migrations
 
