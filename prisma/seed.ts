@@ -9,7 +9,7 @@ import { join } from "node:path";
 function loadEnvFile(): void {
   try {
     const content = readFileSync(join(process.cwd(), ".env"), "utf8");
-    for (const line of content.split("\\n")) {
+    for (const line of content.split("\n")) {
       const trimmed = line.trim();
       if (!trimmed || trimmed.startsWith("#")) continue;
       const eq = trimmed.indexOf("=");
