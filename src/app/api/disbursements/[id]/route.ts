@@ -100,8 +100,7 @@ export async function GET(
             lastViewedAt: invitation.lastViewedAt,
           })),
           timeline,
-        }),
-        (_key, value) => (typeof value === "bigint" ? value.toString() : value),
+        }, (_key, value) => (typeof value === "bigint" ? value.toString() : value)),
       ),
     ),
   );
